@@ -42,6 +42,7 @@ task all: [:ebooks, :paperback]
 
 desc 'Build all ebook formats'
 task ebooks: [:ebook_format, :ebook_publication, :ebook_manuscript, build_out] do
+  `cd #{ebook_build_dir} && rake`
 end
 
 desc 'Build the paperback interior PDF'

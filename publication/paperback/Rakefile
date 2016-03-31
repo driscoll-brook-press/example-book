@@ -1,7 +1,7 @@
 require 'rake/clean'
 
 slug = 'book'
-fmt_name = 'dbp'
+fmt_name = 'format/dbp'
 
 tex_file = "#{slug}.tex"
 pdf_file = "#{slug}.pdf"

@@ -4,19 +4,6 @@ require 'pathname'
 build_dir = 'build'
 build_out = "#{build_dir}/out"
 
-task default: :all
-
-desc 'Build all formats'
-task all: [:ebooks, :paperback]
-
-desc 'Build all ebook formats'
-task ebooks: [:ebook_format, :ebook_publication, :ebook_manuscript]
-
-desc 'Build the paperback interior PDF'
-task paperback: [:paperback_format, :paperback_publication, :paperback_manuscript, build_out] do
-end
-
-
 manuscript_source_dir = 'mss'
 format_source_dir = 'format'
 publication_source_dir = 'publication'
@@ -37,6 +24,30 @@ paperback_build_dir = "#{build_dir}/paperback"
 paperback_format_build_dir = "#{paperback_build_dir}/format"
 paperback_manuscript_build_dir = "#{paperback_build_dir}/mss"
 paperback_publication_build_dir = paperback_build_dir
+
+directory build_out
+directory ebook_build_dir
+directory ebook_format_build_dir
+directory ebook_manuscript_build_dir
+directory ebook_publication_build_dir
+directory paperback_build_dir
+directory paperback_format_build_dir
+directory paperback_manuscript_build_dir
+directory paperback_publication_build_dir
+
+task default: :all
+
+desc 'Build all formats'
+task all: [:ebooks, :paperback]
+
+desc 'Build all ebook formats'
+task ebooks: [:ebook_format, :ebook_publication, :ebook_manuscript, build_out] do
+end
+
+desc 'Build the paperback interior PDF'
+task paperback: [:paperback_format, :paperback_publication, :paperback_manuscript, build_out] do
+  `cd #{paperback_build_dir} && rake`
+end
 
 task ebook_format: [ebook_format_build_dir] do
   cp_r "#{ebook_format_source_dir}/.", ebook_format_build_dir
@@ -62,16 +73,6 @@ end
 task paperback_publication: [paperback_build_dir] do
   cp_r "#{paperback_publication_source_dir}/.", paperback_publication_build_dir
 end
-
-directory build_out
-directory ebook_build_dir
-directory ebook_format_build_dir
-directory ebook_manuscript_build_dir
-directory ebook_publication_build_dir
-directory paperback_build_dir
-directory paperback_format_build_dir
-directory paperback_manuscript_build_dir
-directory paperback_publication_build_dir
 
 CLEAN << build_out
 CLOBBER << build_dir

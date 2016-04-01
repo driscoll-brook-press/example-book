@@ -1,47 +1,19 @@
 # To Do
 
-## Manuscript
+## Metadata
 
-### Content Files
+- Single authoritative metadata file (YAML).
+- Single authoritative manuscript (DBP TeX).
+- Single authoritative mss manifest (txt or YAML).
 
-- translated
-    from `mss/tex`
-    to `build/paperback/mss`
-    by `tex2md`
+## Ebooks
 
-### Spine
+- Metadata: metadata.yaml
+- MSS: TeX -> markdown
+- Manifest: mss.yaml
 
-A listing of the content files in proper reading order.
+## Paperback
 
-- translated
-    from `mss/spine.txt`
-    to `build/paperback/spine.tex`
-    by `sed`
-
-### spine.txt
-
-Example `mss/spine.txt`:
-
-~~~
-introduction
-carrion-road/chapter-01
-carrion-road/chapter-02
-carrion-road/chapter-03
-~~~
-
-Example `build/paperback/spine.tex`
-
-~~~
-\input mss/introduction
-\input mss/carrion-road/chapter-01
-\input mss/carrion-road/chapter-02
-\input mss/carrion-road/chapter-03
-~~~
-
-### Text or YAML?
-
-- If I make it text, it stays simple.
-- If I make it YAML, I can add metadata to each file:
-    - Title
-    - Style (book, chapter, scene)
-    
+- Metadata: metadata.yaml -> metadata.tex
+- MSS: TeX
+- Manifest: mss.yaml -> mss.tex

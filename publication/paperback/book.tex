@@ -1,11 +1,24 @@
-\newtoks\bookcontent
-
 \input debugging
 
-\input book/metadata
-\input preview/metadata
+\input publication/metadata
+\input publication/format
 
-\input format
-\input content
+\frontmatter
+\input publication/teaser
+\input author/books
+\titlepage
+\copyrightpage
+\halftitlepage
+
+\mainmatter
+\input mss
+
+\backmatter
+\input author/about
+\input author/connect
+\input author/books
+
+\input preview/metadata
+\preview
 
 \endbook

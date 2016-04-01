@@ -1,7 +1,3 @@
-\newtoks\previewtitle
-\newtoks\previewauthor
-\newtoks\previewcontent
-
 \def\previewtitleblock#1#2{{
   \centeredheading{\booktitlefont}{#1}
   \skipline
@@ -32,19 +28,3 @@
   \vfil
   \centerline{\linelogo}
 }
-
-\def\preview{
-  \announce{\the\previewtitle}{\the\previewauthor}
-
-  \nextrectopage
-  \chapterheading{\the\previewtitle}
-  \afterchapterheading
-
-  \input \the\previewcontent
-
-  \available{\the\previewtitle}{\the\previewauthor}
-}
-
-\previewtitle={\tbd\previewtitle}
-\previewauthor={\tbd\previewauthor}
-\previewcontent={\tbd\previewcontent}

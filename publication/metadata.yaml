@@ -1,0 +1,20 @@
+slug: file-base-name
+title: XXX BOOK TITLE XXX
+author:
+  name: Dale Hartley Emery
+  sort: Emery, Dale Hartley
+isbn:
+  print: XXX ISBN XXX
+  ebook: XXX ISBN XXX
+date: XXX DATE XXX
+rights:
+  -
+    date: XXX YEAR XXX
+    owner: Dale Hartley Emery
+  -
+    material: Cover design
+    date: XXX YEAR XXX
+    owner: Driscoll Brook Press
+  -
+    material: Cover art
+    owner: XXX COVER ARTIST CREDIT XXX

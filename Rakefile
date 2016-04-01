@@ -4,9 +4,10 @@ require 'pathname'
 build_dir = 'build'
 build_out = "#{build_dir}/out"
 
-manuscript_source_dir = 'mss'
 format_source_dir = 'format'
 publication_source_dir = 'publication'
+manuscript_source_dir = "#{publication_source_dir}/mss"
+manuscript_manifest_file = "#{publication_source_dir}/manifest.txt"
 
 ebook_format_source_dir = "#{format_source_dir}/ebook"
 ebook_publication_source_dir = "#{publication_source_dir}/ebook"
@@ -17,7 +18,6 @@ ebook_manuscript_build_dir = "#{ebook_build_dir}/mss"
 ebook_publication_build_dir = ebook_build_dir
 
 paperback_format_source_dir = "#{format_source_dir}/paperback"
-paperback_manuscript_source_dir = "#{manuscript_source_dir}/tex"
 paperback_publication_source_dir = "#{publication_source_dir}/paperback"
 
 paperback_build_dir = "#{build_dir}/paperback"
@@ -55,7 +55,7 @@ task ebook_format: [ebook_format_build_dir] do
 end
 
 task ebook_manuscript: [ebook_manuscript_build_dir] do
-  `tex2md #{paperback_manuscript_source_dir} #{ebook_manuscript_build_dir}`
+  `tex2md #{manuscript_source_dir} #{ebook_manuscript_build_dir}`
 end
 
 task ebook_publication: [ebook_publication_build_dir] do
@@ -68,7 +68,7 @@ task paperback_format: [paperback_format_build_dir] do
 end
 
 task paperback_manuscript: [paperback_manuscript_build_dir] do
-  cp_r "#{paperback_manuscript_source_dir}/.", paperback_manuscript_build_dir
+  cp_r "#{manuscript_source_dir}/.", paperback_manuscript_build_dir
 end
 
 task paperback_publication: [paperback_build_dir] do

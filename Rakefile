@@ -64,18 +64,11 @@ end
 
 task paperback_format: [paperback_format_build_dir] do
   cp_r "#{paperback_format_source_dir}/.", paperback_format_build_dir
-  `cd #{paperback_format_build_dir} && rake`
+  runcommand "cd #{paperback_format_build_dir} && rake"
 end
 
 task paperback_content: [paperback_content_listing, paperback_content_build_dir] do
   cp_r "#{content_source_dir}/.", paperback_content_build_dir
-end
-
-task paperback_content_listing => [paperback_content_build_dir] do
-  yaml = YAML.load_file(content_listing)
-  File.open(paperback_content_listing, 'w') do |f|
-    yaml.each{|line| f.puts "\\input content/#{line}"}
-  end
 end
 
 task paperback_publication: [paperback_publication_metadata, paperback_build_dir] do
@@ -93,6 +86,13 @@ task paperback_publication_metadata => [paperback_build_dir] do
     f.puts '\\rights={'
     f.puts yaml['rights'].map{|r| "#{r['material']} \\copyright~#{r['date']} #{r['owner']}"}.join('\\break ')
     f.puts '}'
+  end
+end
+
+task paperback_content_listing => [paperback_content_build_dir] do
+  yaml = YAML.load_file(content_listing)
+  File.open(paperback_content_listing, 'w') do |f|
+    yaml.each{|line| f.puts "\\input content/#{line}"}
   end
 end
 

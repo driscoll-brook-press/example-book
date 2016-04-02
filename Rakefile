@@ -78,17 +78,13 @@ task paperback_content_listing: [paperback_content_build_dir] do
   end
 end
 
-task paperback_publication: [paperback_build_dir] do
+task paperback_publication: [:paperback_publication_metadata, paperback_build_dir] do
   cp_r "#{paperback_publication_source_dir}/.", paperback_build_dir
-  publication_yaml_to_tex(publication_source_file, paperback_publication_build_file)
 end
 
-def content_yaml_to_tex(yaml_file, tex_file)
-end
-
-def publication_yaml_to_tex(yaml_file, tex_file)
-  yaml = YAML.load_file(yaml_file)
-  File.open(tex_file, 'w') do |f|
+task paperback_publication_metadata: [paperback_build_dir] do
+  yaml = YAML.load_file(publication_source_file)
+  File.open(paperback_publication_build_file, 'w') do |f|
     f.puts "\\title={#{yaml['title']}}"
     f.puts "\\author={#{yaml['author']['name']}}"
     f.puts '\\isbns={'

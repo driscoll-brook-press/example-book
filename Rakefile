@@ -42,12 +42,12 @@ task all: [:ebooks, :paperback]
 
 desc 'Build all ebook formats'
 task ebooks: [:ebook_format, :ebook_publication, :ebook_content, build_out] do
-  `cd #{ebook_build_dir} && rake`
+  runcommand "cd #{ebook_build_dir} && rake"
 end
 
 desc 'Build the paperback interior PDF'
 task paperback: [:paperback_format, :paperback_publication, :paperback_content, build_out] do
-  `cd #{paperback_build_dir} && rake`
+  runcommand "cd #{paperback_build_dir} && rake"
 end
 
 task ebook_format: [ebook_format_build_dir] do
@@ -55,7 +55,7 @@ task ebook_format: [ebook_format_build_dir] do
 end
 
 task ebook_content: [ebook_content_build_dir] do
-  `tex2md #{content_source_dir} #{ebook_content_build_dir}`
+  runcommand "tex2md #{content_source_dir} #{ebook_content_build_dir}"
 end
 
 task ebook_publication: [ebook_build_dir] do
@@ -96,6 +96,12 @@ def publication_yaml_to_tex(yaml_file, tex_file)
     f.puts yaml['rights'].map{|r| "#{r['material']} \\copyright~#{r['date']} #{r['owner']}"}.join('\\break ')
     f.puts '}'
   end
+end
+
+def runcommand(command, redirect: true, background: false)
+    full_command = "#{command}#{' 2>&1' if redirect}#{' &' if background}"
+    puts ">>> #{full_command}"
+    IO.popen(full_command).each_line{|line| puts line}
 end
 
 CLEAN << build_out

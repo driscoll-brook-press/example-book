@@ -67,9 +67,15 @@ task paperback_format: [paperback_format_build_dir] do
   `cd #{paperback_format_build_dir} && rake`
 end
 
-task paperback_content: [paperback_content_build_dir] do
+task paperback_content: [:paperback_content_listing, paperback_content_build_dir] do
   cp_r "#{content_source_dir}/.", paperback_content_build_dir
-  content_yaml_to_tex(content_source_file, paperback_content_build_file)
+end
+
+task paperback_content_listing: [paperback_content_build_dir] do
+  yaml = YAML.load_file(content_source_file)
+  File.open(paperback_content_build_file, 'w') do |f|
+    yaml.each{|line| f.puts "\\input content/#{line}"}
+  end
 end
 
 task paperback_publication: [paperback_build_dir] do
@@ -78,10 +84,6 @@ task paperback_publication: [paperback_build_dir] do
 end
 
 def content_yaml_to_tex(yaml_file, tex_file)
-  yaml = YAML.load_file(yaml_file)
-  File.open(tex_file, 'w') do |f|
-    yaml.each{|line| f.puts "\\input content/#{line}"}
-  end
 end
 
 def publication_yaml_to_tex(yaml_file, tex_file)

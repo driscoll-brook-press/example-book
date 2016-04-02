@@ -7,10 +7,9 @@ build_out = "#{build_dir}/out"
 
 format_source_dir = 'format'
 publication_source_dir = 'publication'
-metadata_source_file = "#{publication_source_dir}/metadata.yaml"
+metadata_source_file = "#{publication_source_dir}/publication.yaml"
 content_source_dir = "#{publication_source_dir}/content"
 content_source_file = "#{publication_source_dir}/content.yaml"
-content_manifest_file = "#{publication_source_dir}/manifest.txt"
 
 ebook_format_source_dir = "#{format_source_dir}/ebook"
 ebook_publication_source_dir = "#{publication_source_dir}/ebook"
@@ -26,7 +25,7 @@ paperback_build_dir = "#{build_dir}/paperback"
 paperback_content_build_dir = "#{paperback_build_dir}/content"
 paperback_content_build_file = "#{paperback_build_dir}/content.tex"
 paperback_format_build_dir = "#{paperback_build_dir}/format"
-paperback_metadata_build_file = "#{paperback_build_dir}/metadata.tex"
+paperback_metadata_build_file = "#{paperback_build_dir}/publication.tex"
 
 directory build_out
 directory ebook_build_dir

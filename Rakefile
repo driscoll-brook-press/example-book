@@ -7,7 +7,7 @@ build_out = "#{build_dir}/out"
 
 format_source_dir = 'format'
 publication_source_dir = 'publication'
-metadata_source_file = "#{publication_source_dir}/publication.yaml"
+publication_source_file = "#{publication_source_dir}/publication.yaml"
 content_source_dir = "#{publication_source_dir}/content"
 content_source_file = "#{publication_source_dir}/content.yaml"
 
@@ -25,7 +25,7 @@ paperback_build_dir = "#{build_dir}/paperback"
 paperback_content_build_dir = "#{paperback_build_dir}/content"
 paperback_content_build_file = "#{paperback_build_dir}/content.tex"
 paperback_format_build_dir = "#{paperback_build_dir}/format"
-paperback_metadata_build_file = "#{paperback_build_dir}/publication.tex"
+paperback_publication_build_file = "#{paperback_build_dir}/publication.tex"
 
 directory build_out
 directory ebook_build_dir
@@ -69,22 +69,22 @@ end
 
 task paperback_content: [paperback_content_build_dir] do
   cp_r "#{content_source_dir}/.", paperback_content_build_dir
-  paperback_content(content_source_file, paperback_content_build_file)
+  content_yaml_to_tex(content_source_file, paperback_content_build_file)
 end
 
 task paperback_publication: [paperback_build_dir] do
   cp_r "#{paperback_publication_source_dir}/.", paperback_build_dir
-  paperback_metadata(metadata_source_file, paperback_metadata_build_file)
+  publication_yaml_to_tex(publication_source_file, paperback_publication_build_file)
 end
 
-def paperback_content(yaml_file, tex_file)
+def content_yaml_to_tex(yaml_file, tex_file)
   yaml = YAML.load_file(yaml_file)
   File.open(tex_file, 'w') do |f|
     yaml.each{|line| f.puts "\\input content/#{line}"}
   end
 end
 
-def paperback_metadata(yaml_file, tex_file)
+def publication_yaml_to_tex(yaml_file, tex_file)
   yaml = YAML.load_file(yaml_file)
   File.open(tex_file, 'w') do |f|
     f.puts "\\title={#{yaml['title']}}"

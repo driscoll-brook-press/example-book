@@ -2,33 +2,33 @@ require 'rake/clean'
 require 'pathname'
 require 'yaml'
 
-build_dir = 'build'
+build_dir = Pathname('build')
 
-publication_source_dir = 'publication'
-manuscript_source_dir = "#{publication_source_dir}/manuscript"
-manuscript_listing_source_file = "#{publication_source_dir}/manuscript.yaml"
-publication_source_file = "#{publication_source_dir}/publication.yaml"
+publication_source_dir = Pathname('publication')
+manuscript_source_dir = publication_source_dir / 'manuscript'
+manuscript_listing_source_file = publication_source_dir / 'manuscript.yaml'
+publication_source_file = publication_source_dir / 'publication.yaml'
 
-ebook_source_dir = 'ebook'
-ebook_format_source_dir = "#{ebook_source_dir}/format"
-ebook_template_source_dir = "#{ebook_source_dir}/template"
+ebook_source_dir = Pathname('ebook')
+ebook_format_source_dir = ebook_source_dir / 'format'
+ebook_template_source_dir = ebook_source_dir / 'template'
 
-paperback_source_dir = 'paperback'
-paperback_format_source_dir = "#{paperback_source_dir}/format"
-paperback_template_source_dir = "#{paperback_source_dir}/template"
+paperback_source_dir = Pathname('paperback')
+paperback_format_source_dir = paperback_source_dir / 'format'
+paperback_template_source_dir = paperback_source_dir / 'template'
 
-ebook_dir = "#{build_dir}/ebooks"
-ebook_data_dir = "#{ebook_dir}/_data"
-ebook_manuscript_dir = "#{ebook_dir}/manuscript"
-ebook_manuscript_listing_file = "#{ebook_data_dir}/manuscript.yaml"
-ebook_publication_file = "#{ebook_data_dir}/publication.yaml"
+ebook_dir = build_dir / 'ebooks'
+ebook_data_dir = ebook_dir / '_data'
+ebook_manuscript_dir = ebook_dir / 'manuscript'
+ebook_manuscript_listing_file = ebook_data_dir / 'manuscript.yaml'
+ebook_publication_file = ebook_data_dir / 'publication.yaml'
 
-paperback_dir = "#{build_dir}/paperback"
-paperback_format_dir = "#{paperback_dir}/format"
-paperback_format_file = "#{paperback_format_dir}/dbp.tex"
-paperback_manuscript_dir = "#{paperback_dir}/manuscript"
-paperback_manuscript_listing_file = "#{paperback_dir}/manuscript.tex"
-paperback_publication_file = "#{paperback_dir}/publication.tex"
+paperback_dir = build_dir / 'paperback'
+paperback_format_dir = paperback_dir / 'format'
+paperback_format_file = paperback_format_dir / 'dbp.tex'
+paperback_manuscript_dir = paperback_dir / 'manuscript'
+paperback_manuscript_listing_file = paperback_dir / 'manuscript.tex'
+paperback_publication_file = paperback_dir / 'publication.tex'
 
 directory ebook_dir
 directory ebook_data_dir

@@ -25,6 +25,7 @@ ebook_publication_file = "#{ebook_data_dir}/publication.yaml"
 
 paperback_dir = "#{build_dir}/paperback"
 paperback_format_dir = "#{paperback_dir}/format"
+paperback_format_file = "#{paperback_format_dir}/dbp.tex"
 paperback_manuscript_dir = "#{paperback_dir}/manuscript"
 paperback_manuscript_listing_file = "#{paperback_dir}/manuscript.tex"
 paperback_publication_file = "#{paperback_dir}/publication.tex"
@@ -71,11 +72,11 @@ task ebook_template_files: [ebook_dir] do
 end
 
 desc 'Build the paperback interior PDF'
-task paperback: [:paperback_format, :paperback_template_files, paperback_publication_file, :paperback_manuscript_files, paperback_manuscript_listing_file] do
+task paperback: [paperback_format_file, :paperback_template_files, paperback_publication_file, :paperback_manuscript_files, paperback_manuscript_listing_file] do
   runcommand "cd #{paperback_dir} && rake"
 end
 
-task paperback_format: [:paperback_format_files] do
+task paperback_format_file => [:paperback_format_files] do
   runcommand "cd #{paperback_format_dir} && rake"
 end
 

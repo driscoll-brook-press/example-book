@@ -48,14 +48,24 @@ h1, h2, h3 {
   }
 }
 
-.about, .chapter, .preview {
-  // Lead-in for the first paragraph after a header
-  h1, h2, h3 {
-    & + p {
-      &:first-letter { font-size: $heading-2-size; }
-      &:first-line { font-variant: small-caps; }
+.leadin {
+  &:first-letter { font-size: $heading-2-size; }
+  font-variant: small-caps;
+}
+
+.emph {
+  font-style: italic;
+  .emph {
+    font-style: normal;
+    .emph {
+      font-style: italic;
     }
   }
+}
+
+.abbr {
+  text-transform: lowercase;
+  font-variant: small-caps;
 }
 
 books a { font-style: italic; }

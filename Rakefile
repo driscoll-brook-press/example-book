@@ -18,18 +18,24 @@ paperback_publication_source_dir = "#{publication_source_dir}/paperback"
 
 ebook_dir = "#{build_dir}/ebooks"
 ebook_content_dir = "#{ebook_dir}/content"
+ebook_data_dir = "#{ebook_dir}/_data"
+ebook_content_listing_file = "#{ebook_data_dir}/content.yaml"
+ebook_metadata_file = "#{ebook_data_dir}/metadata.yaml"
 
 paperback_dir = "#{build_dir}/paperback"
 paperback_content_dir = "#{paperback_dir}/content"
-paperback_content_listing_file = "#{paperback_dir}/content.tex"
 paperback_format_dir = "#{paperback_dir}/format"
+paperback_content_listing_file = "#{paperback_dir}/content.tex"
 paperback_metadata_file = "#{paperback_dir}/metadata.tex"
 
 directory ebook_dir
 directory ebook_content_dir
+directory ebook_data_dir
 directory paperback_dir
 directory paperback_content_dir
 directory paperback_format_dir
+
+content_listing = YAML.load_file(content_listing_source_file)
 
 task default: :all
 
@@ -41,15 +47,25 @@ task ebooks: [:ebook_content_files, :ebook_format_files, :ebook_publication_file
   runcommand "cd #{ebook_dir} && rake"
 end
 
-task ebook_content_files: [ebook_content_dir] do
+task ebook_content_files: [ebook_content_listing_file, ebook_content_dir] do
   runcommand "tex2md #{content_source_dir} #{ebook_content_dir}"
+end
+
+task ebook_content_listing_file => [ebook_data_dir] do
+  File.open(ebook_content_listing_file, 'w') do |f|
+    content_listing.each{|line| f.puts "- content/#{line}.html"}
+  end
 end
 
 task ebook_format_files: [ebook_dir] do
   cp_r "#{ebook_format_source_dir}/.", ebook_dir
 end
 
-task ebook_publication_files: [ebook_dir] do
+task ebook_metadata_file => [ebook_data_dir] do
+  cp metadata_source_file, ebook_metadata_file
+end
+
+task ebook_publication_files: [ebook_metadata_file, ebook_dir] do
   cp_r "#{ebook_publication_source_dir}/.", ebook_dir
 end
 
@@ -63,9 +79,8 @@ task paperback_content_files: [paperback_content_listing_file, paperback_content
 end
 
 task paperback_content_listing_file => [paperback_content_dir] do
-  yaml = YAML.load_file(content_listing_source_file)
   File.open(paperback_content_listing_file, 'w') do |f|
-    yaml.each{|line| f.puts "\\input content/#{line}"}
+    content_listing.each{|line| f.puts "\\input content/#{line}"}
   end
 end
 

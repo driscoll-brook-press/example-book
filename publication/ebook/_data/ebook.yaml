@@ -1,10 +1,10 @@
 cover:
   page:  cover/cover.html
   image: cover/cover.jpg
-front-matter:
+frontmatter:
   - publication/title.html
   - publication/toc.html
-back-matter:
+backmatter:
   - author/about.html
   - author/connect.html
   - author/books.html

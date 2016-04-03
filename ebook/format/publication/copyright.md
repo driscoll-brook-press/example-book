@@ -2,8 +2,8 @@
 title: Copyright Information
 guide: copyright-information
 ...
-{% assign publication = site.data.metadata %}
 {% assign publisher = site.data.publisher %}
+{% assign publication = site.data.publication %}
 
 ## {{ publication.title }}
 

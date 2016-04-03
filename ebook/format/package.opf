@@ -5,9 +5,9 @@ manifest: false
 <package xmlns='http://www.idpf.org/2007/opf' unique-identifier='isbn' version='2.0'>
   {% assign author = site.data.author %}
   {% assign ebook = site.data.ebook  %}
-  {% assign publication = site.data.metadata  %}
+  {% assign manuscript = site.data.manuscript %}
+  {% assign publication = site.data.publication  %}
   {% assign publisher = site.data.publisher %}
-  {% assign manuscript = site.data.content %}
   <metadata xmlns:dc='http://purl.org/dc/elements/1.1/' xmlns:opf='http://www.idpf.org/2007/opf'>
     <dc:format>application/epub+zip</dc:format>
     <dc:language>en-US</dc:language>

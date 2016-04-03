@@ -3,9 +3,9 @@ title: Title Page
 guide: title-page
 add_header: no
 ---
-{% assign publication = site.data.metadata %}
 {% assign author = site.data.author %}
 {% assign publisher = site.data.publisher %}
+{% assign publication = site.data.publication %}
 
 # {{ publication.title }}
 

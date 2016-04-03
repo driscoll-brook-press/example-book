@@ -3,7 +3,7 @@ title: Contents
 guide: toc
 ---
 {% assign publication = site.data.ebook %}
-{% assign manuscript = site.data.content %}
+{% assign manuscript = site.data.manuscript %}
 {% if site.include-cover %}{% include toc-entry.html path=publication.cover.page %}{% endif %}
 {% for path in publication.frontmatter %}{% include toc-entry.html path=path %}{% endfor %}
 {% for path in manuscript %}{% include toc-entry.html path=path %}{% endfor %}

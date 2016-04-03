@@ -4,8 +4,8 @@ layout:
 <ncx version='2005-1' xmlns='http://www.daisy.org/z3986/2005/ncx/' xml:lang='en-US'>
   {% assign author = site.data.author %}
   {% assign ebook = site.data.ebook %}
-  {% assign manuscript = site.data.content %}
-  {% assign publication = site.data.metadata %}
+  {% assign manuscript = site.data.manuscript %}
+  {% assign publication = site.data.publication %}
   <head>
     <meta name='dtb:uid' content='{{ publication.isbn }}' />
   </head>

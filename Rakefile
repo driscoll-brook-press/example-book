@@ -39,11 +39,15 @@ publication = YAML.load_file(publication_source_file)
 manuscript_listing = YAML.load_file(manuscript_listing_source_file)
 cover_source_file = cover_source_dir / "#{publication['slug']}-cover-ebook.jpg"
 
-def copy_files_task(task_symbol, source_dir, excludes, dest_dir)
+def files(source_dir, excludes)
   FileList.new(source_dir / '**/*') do |l|
     l.exclude { |f| excludes.include? f.pathmap('%f') }
     l.exclude { |f| File.directory? f }
-  end.each do |source_file|
+  end
+end
+
+def copy_files_task(task_symbol, source_dir, excludes, dest_dir)
+  files(source_dir, excludes).each do |source_file|
     target_file = source_file.pathmap("%{^#{source_dir}/,#{dest_dir}/}p")
     target_dir = target_file.pathmap('%d')
     directory target_dir

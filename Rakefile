@@ -45,6 +45,38 @@ publication = YAML.load_file(publication_source_file)
 manuscript_listing = YAML.load_file(manuscript_listing_source_file)
 cover_source_file = cover_source_dir / "#{publication['slug']}-cover-ebook.jpg"
 
+ebook_format_source_files = FileList.new(ebook_format_source_dir / '**/*') do |l|
+  l.exclude { |f| %w[README.md].include? f.pathmap('%f') }
+  l.exclude { |f| File.directory? f }
+end
+
+def copy_files_task(source_files, source_dir, dest_dir, task_symbol)
+  source_files.each do |source_file|
+    target_file = source_file.pathmap("%{^#{source_dir}/,#{dest_dir}/}p")
+    target_dir = target_file.pathmap('%d')
+    directory target_dir
+    file target_file => [source_file, target_dir] do |t|
+      cp source_file, t.name
+    end
+    task task_symbol => target
+  end
+end
+
+ebook_format_source_files.each do |source|
+  target = source.pathmap("%{^#{ebook_format_source_dir}/,#{ebook_dir}/}p")
+  target_dir = target.pathmap('%d')
+  directory target_dir
+  file target => [source, target_dir] do |t|
+    cp source, t.name
+  end
+  task ebook_format_files: target
+end
+
+ebook_template_source_files = FileList.new(ebook_template_source_dir / '**/*') do |l|
+  l.exclude { |f| %w[README.md].include? f.pathmap('%f') }
+  l.exclude { |f| File.directory? f }
+end
+
 task default: :all
 
 desc 'Build all formats'
@@ -57,10 +89,6 @@ end
 
 task ebook_cover_file => [ebook_cover_dir] do
   cp cover_source_file, ebook_cover_file
-end
-
-task ebook_format_files: [ebook_dir] do
-  cp_r "#{ebook_format_source_dir}/.", ebook_dir
 end
 
 task ebook_manuscript_files: [ebook_manuscript_dir] do

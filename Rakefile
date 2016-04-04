@@ -58,19 +58,11 @@ def copy_files_task(source_files, source_dir, dest_dir, task_symbol)
     file target_file => [source_file, target_dir] do |t|
       cp source_file, t.name
     end
-    task task_symbol => target
+    task task_symbol => target_file
   end
 end
 
-ebook_format_source_files.each do |source|
-  target = source.pathmap("%{^#{ebook_format_source_dir}/,#{ebook_dir}/}p")
-  target_dir = target.pathmap('%d')
-  directory target_dir
-  file target => [source, target_dir] do |t|
-    cp source, t.name
-  end
-  task ebook_format_files: target
-end
+copy_files_task(ebook_format_source_files, ebook_format_source_dir, ebook_dir, :ebook_format_files)
 
 ebook_template_source_files = FileList.new(ebook_template_source_dir / '**/*') do |l|
   l.exclude { |f| %w[README.md].include? f.pathmap('%f') }

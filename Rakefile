@@ -38,8 +38,6 @@ directory ebook_cover_dir
 directory ebook_data_dir
 directory ebook_manuscript_dir
 directory paperback_dir
-directory paperback_format_dir
-directory paperback_manuscript_dir
 
 publication = YAML.load_file(publication_source_file)
 manuscript_listing = YAML.load_file(manuscript_listing_source_file)
@@ -63,6 +61,8 @@ end
 copy_files_task(:ebook_format_files, ebook_format_source_dir, %w[README.md], ebook_dir)
 copy_files_task(:ebook_template_files, ebook_template_source_dir, %w[README.md], ebook_dir)
 copy_files_task(:paperback_format_files, paperback_format_source_dir, %w[README.md], paperback_format_dir)
+copy_files_task(:paperback_manuscript_files, manuscript_source_dir, %w[], paperback_manuscript_dir)
+copy_files_task(:paperback_template_files, paperback_template_source_dir, %[README.md], paperback_dir)
 
 task default: :all
 
@@ -101,10 +101,6 @@ task paperback_format_file => [:paperback_format_files] do
   runcommand "cd #{paperback_format_dir} && rake"
 end
 
-task paperback_manuscript_files: [paperback_manuscript_dir] do
-  cp_r "#{manuscript_source_dir}/.", paperback_manuscript_dir
-end
-
 task paperback_manuscript_listing_file => [paperback_dir] do
   File.open(paperback_manuscript_listing_file, 'w') do |f|
     manuscript_listing.each{|line| f.puts "\\input manuscript/#{line}"}
@@ -122,10 +118,6 @@ task paperback_publication_file => [paperback_dir] do
     f.puts publication['rights'].map{|r| "#{r['material']} \\copyright~#{r['date']} #{r['owner']}"}.join('\\break ')
     f.puts '}'
   end
-end
-
-task paperback_template_files: [paperback_dir] do
-  cp_r "#{paperback_template_source_dir}/.", paperback_dir
 end
 
 def runcommand(command, redirect: true, background: false)

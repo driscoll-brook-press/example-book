@@ -28,7 +28,7 @@ ebook_publication_file = ebook_data_dir / 'publication.yaml'
 
 paperback_dir = build_dir / 'paperback'
 paperback_format_dir = paperback_dir / 'format'
-paperback_format_file = paperback_format_dir / 'dbp.tex'
+paperback_format_file = paperback_format_dir / 'dbp.fmt'
 paperback_manuscript_dir = paperback_dir / 'manuscript'
 paperback_manuscript_listing_file = paperback_dir / 'manuscript.tex'
 paperback_publication_file = paperback_dir / 'publication.tex'
@@ -45,13 +45,11 @@ publication = YAML.load_file(publication_source_file)
 manuscript_listing = YAML.load_file(manuscript_listing_source_file)
 cover_source_file = cover_source_dir / "#{publication['slug']}-cover-ebook.jpg"
 
-ebook_format_source_files = FileList.new(ebook_format_source_dir / '**/*') do |l|
-  l.exclude { |f| %w[README.md].include? f.pathmap('%f') }
-  l.exclude { |f| File.directory? f }
-end
-
-def copy_files_task(source_files, source_dir, dest_dir, task_symbol)
-  source_files.each do |source_file|
+def copy_files_task(task_symbol, source_dir, excludes, dest_dir)
+  FileList.new(source_dir / '**/*') do |l|
+    l.exclude { |f| excludes.include? f.pathmap('%f') }
+    l.exclude { |f| File.directory? f }
+  end.each do |source_file|
     target_file = source_file.pathmap("%{^#{source_dir}/,#{dest_dir}/}p")
     target_dir = target_file.pathmap('%d')
     directory target_dir
@@ -62,12 +60,9 @@ def copy_files_task(source_files, source_dir, dest_dir, task_symbol)
   end
 end
 
-copy_files_task(ebook_format_source_files, ebook_format_source_dir, ebook_dir, :ebook_format_files)
-
-ebook_template_source_files = FileList.new(ebook_template_source_dir / '**/*') do |l|
-  l.exclude { |f| %w[README.md].include? f.pathmap('%f') }
-  l.exclude { |f| File.directory? f }
-end
+copy_files_task(:ebook_format_files, ebook_format_source_dir, %w[README.md], ebook_dir)
+copy_files_task(:ebook_template_files, ebook_template_source_dir, %w[README.md], ebook_dir)
+copy_files_task(:paperback_format_files, paperback_format_source_dir, %w[README.md], paperback_format_dir)
 
 task default: :all
 
@@ -97,10 +92,6 @@ task ebook_publication_file => [ebook_data_dir] do
   cp publication_source_file, ebook_publication_file
 end
 
-task ebook_template_files: [ebook_dir] do
-  cp_r "#{ebook_template_source_dir}/.", ebook_dir
-end
-
 desc 'Build the paperback interior PDF'
 task paperback: [paperback_format_file, :paperback_template_files, paperback_publication_file, :paperback_manuscript_files, paperback_manuscript_listing_file] do
   runcommand "cd #{paperback_dir} && rake"
@@ -108,10 +99,6 @@ end
 
 task paperback_format_file => [:paperback_format_files] do
   runcommand "cd #{paperback_format_dir} && rake"
-end
-
-task paperback_format_files: [paperback_format_dir] do
-  cp_r "#{paperback_format_source_dir}/.", paperback_format_dir
 end
 
 task paperback_manuscript_files: [paperback_manuscript_dir] do

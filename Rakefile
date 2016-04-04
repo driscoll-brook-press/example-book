@@ -107,7 +107,7 @@ file paperback_manuscript_listing_file => [manuscript_listing_source_file, paper
   end
 end
 
-task paperback_publication_file => [paperback_dir] do
+file paperback_publication_file => [publication_source_file, paperback_dir] do
   File.open(paperback_publication_file, 'w') do |f|
     f.puts "\\title={#{publication['title']}}"
     f.puts "\\author={#{publication['author']['name']}}"

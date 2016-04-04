@@ -71,12 +71,12 @@ task all: [:ebooks, :paperback]
 
 desc 'Build all ebook formats'
 task ebooks: [:ebook_format_files, :ebook_template_files, ebook_cover_file, ebook_publication_file, :ebook_manuscript_files, ebook_manuscript_listing_file ] do
-  runcommand "cd #{ebook_dir} && rake"
+  cd(ebook_dir) { sh 'rake' }
 end
 
 directory ebook_manuscript_dir
 task ebook_manuscript_files: [ebook_manuscript_dir] do
-  runcommand "tex2md #{manuscript_source_dir} #{ebook_manuscript_dir}"
+  sh 'tex2md', manuscript_source_dir.to_s, ebook_manuscript_dir.to_s
 end
 
 directory ebook_data_dir
@@ -97,11 +97,11 @@ end
 
 desc 'Build the paperback interior PDF'
 task paperback: [paperback_format_file, :paperback_template_files, paperback_publication_file, :paperback_manuscript_files, paperback_manuscript_listing_file] do
-  runcommand "cd #{paperback_dir} && rake"
+  cd(paperback_dir) { sh 'rake' }
 end
 
 task paperback_format_file => [:paperback_format_files] do
-  runcommand "cd #{paperback_format_dir} && rake"
+  cd(paperback_format_dir) { sh 'rake' }
 end
 
 directory paperback_dir
@@ -122,12 +122,6 @@ file paperback_publication_file => [publication_source_file, paperback_dir] do
     f.puts publication['rights'].map{|r| "#{r['material']} \\copyright~#{r['date']} #{r['owner']}"}.join('\\break ')
     f.puts '}'
   end
-end
-
-def runcommand(command, redirect: true, background: false)
-    full_command = "#{command}#{' 2>&1' if redirect}#{' &' if background}"
-    puts ">>> #{full_command}"
-    IO.popen(full_command).each_line{|line| puts line}
 end
 
 # CLEAN << build_out

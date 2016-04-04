@@ -58,7 +58,23 @@ def copy_files_task(task_symbol, source_dir, excludes, dest_dir)
   end
 end
 
-copy_files_task(:ebook_format_files, ebook_format_source_dir, %w[README.md], ebook_dir)
+EBOOK_FORMAT_SOURCE_FILES = FileList.new(ebook_format_source_dir / '**/*') do |l|
+  l.exclude { |f| %w[README.md].include? f.pathmap('%f') }
+  l.exclude { |f| File.directory? f }
+end
+
+EBOOK_FORMAT_BUILD_FILES = EBOOK_FORMAT_SOURCE_FILES.pathmap("%{^#{ebook_format_source_dir}/,#{ebook_dir}/}p")
+
+EBOOK_FORMAT_SOURCE_FILES.zip(EBOOK_FORMAT_BUILD_FILES).each do |source, target|
+  target_dir = target.pathmap('%d')
+  directory target_dir
+  file target => [target_dir, source] do |t|
+    cp source, target_dir
+  end
+end
+
+task :none
+
 copy_files_task(:ebook_template_files, ebook_template_source_dir, %w[README.md], ebook_dir)
 copy_files_task(:paperback_format_files, paperback_format_source_dir, %w[README.md], paperback_format_dir)
 copy_files_task(:paperback_manuscript_files, manuscript_source_dir, %w[], paperback_manuscript_dir)
@@ -70,9 +86,11 @@ desc 'Build all formats'
 task all: [:ebooks, :paperback]
 
 desc 'Build all ebook formats'
-task ebooks: [:ebook_format_files, :ebook_template_files, ebook_cover_file, ebook_publication_file, :ebook_manuscript_files, ebook_manuscript_listing_file ] do
+task ebooks: EBOOK_FORMAT_BUILD_FILES
+task ebooks: [:ebook_template_files, ebook_cover_file, ebook_publication_file, :ebook_manuscript_files, ebook_manuscript_listing_file ] do
   cd(ebook_dir) { sh 'rake' }
 end
+
 
 directory ebook_manuscript_dir
 task ebook_manuscript_files: [ebook_manuscript_dir] do

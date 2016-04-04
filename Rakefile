@@ -2,6 +2,9 @@ require 'rake/clean'
 require 'pathname'
 require 'yaml'
 
+cover_source_dir = Pathname('covers')
+ebook_source_dir = Pathname('ebook')
+paperback_source_dir = Pathname('paperback')
 build_dir = Pathname('build')
 
 publication_source_dir = Pathname('publication')
@@ -9,17 +12,17 @@ manuscript_source_dir = publication_source_dir / 'manuscript'
 manuscript_listing_source_file = publication_source_dir / 'manuscript.yaml'
 publication_source_file = publication_source_dir / 'publication.yaml'
 
-ebook_source_dir = Pathname('ebook')
 ebook_format_source_dir = ebook_source_dir / 'format'
 ebook_template_source_dir = ebook_source_dir / 'template'
 
-paperback_source_dir = Pathname('paperback')
 paperback_format_source_dir = paperback_source_dir / 'format'
 paperback_template_source_dir = paperback_source_dir / 'template'
 
 ebook_dir = build_dir / 'ebooks'
+ebook_cover_dir = ebook_dir / 'cover'
 ebook_data_dir = ebook_dir / '_data'
 ebook_manuscript_dir = ebook_dir / 'manuscript'
+ebook_cover_file = ebook_cover_dir / 'cover.jpg'
 ebook_manuscript_listing_file = ebook_data_dir / 'manuscript.yaml'
 ebook_publication_file = ebook_data_dir / 'publication.yaml'
 
@@ -31,13 +34,16 @@ paperback_manuscript_listing_file = paperback_dir / 'manuscript.tex'
 paperback_publication_file = paperback_dir / 'publication.tex'
 
 directory ebook_dir
+directory ebook_cover_dir
 directory ebook_data_dir
 directory ebook_manuscript_dir
 directory paperback_dir
 directory paperback_format_dir
 directory paperback_manuscript_dir
 
+publication = YAML.load_file(publication_source_file)
 manuscript_listing = YAML.load_file(manuscript_listing_source_file)
+cover_source_file = cover_source_dir / "#{publication['slug']}-cover-ebook.jpg"
 
 task default: :all
 
@@ -45,8 +51,12 @@ desc 'Build all formats'
 task all: [:ebooks, :paperback]
 
 desc 'Build all ebook formats'
-task ebooks: [:ebook_format_files, :ebook_template_files, ebook_publication_file, :ebook_manuscript_files, ebook_manuscript_listing_file ] do
+task ebooks: [:ebook_format_files, :ebook_template_files, ebook_cover_file, ebook_publication_file, :ebook_manuscript_files, ebook_manuscript_listing_file ] do
   runcommand "cd #{ebook_dir} && rake"
+end
+
+task ebook_cover_file => [ebook_cover_dir] do
+  cp cover_source_file, ebook_cover_file
 end
 
 task ebook_format_files: [ebook_dir] do
@@ -95,15 +105,14 @@ task paperback_manuscript_listing_file => [paperback_dir] do
 end
 
 task paperback_publication_file => [paperback_dir] do
-  yaml = YAML.load_file(publication_source_file)
   File.open(paperback_publication_file, 'w') do |f|
-    f.puts "\\title={#{yaml['title']}}"
-    f.puts "\\author={#{yaml['author']['name']}}"
+    f.puts "\\title={#{publication['title']}}"
+    f.puts "\\author={#{publication['author']['name']}}"
     f.puts '\\isbns={'
-    f.puts yaml['isbn'].map{|k,v| "ISBN: #{v} (#{k})"}.join('\\break ')
+    f.puts publication['isbn'].map{|k,v| "ISBN: #{v} (#{k})"}.join('\\break ')
     f.puts '}'
     f.puts '\\rights={'
-    f.puts yaml['rights'].map{|r| "#{r['material']} \\copyright~#{r['date']} #{r['owner']}"}.join('\\break ')
+    f.puts publication['rights'].map{|r| "#{r['material']} \\copyright~#{r['date']} #{r['owner']}"}.join('\\break ')
     f.puts '}'
   end
 end

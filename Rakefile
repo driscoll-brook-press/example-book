@@ -34,10 +34,6 @@ paperback_manuscript_listing_file = paperback_dir / 'manuscript.tex'
 paperback_publication_file = paperback_dir / 'publication.tex'
 
 directory ebook_dir
-directory ebook_cover_dir
-directory ebook_data_dir
-directory ebook_manuscript_dir
-directory paperback_dir
 
 publication = YAML.load_file(publication_source_file)
 manuscript_listing = YAML.load_file(manuscript_listing_source_file)
@@ -74,22 +70,25 @@ task ebooks: [:ebook_format_files, :ebook_template_files, ebook_cover_file, eboo
   runcommand "cd #{ebook_dir} && rake"
 end
 
-task ebook_cover_file => [ebook_cover_dir] do
-  cp cover_source_file, ebook_cover_file
-end
-
+directory ebook_manuscript_dir
 task ebook_manuscript_files: [ebook_manuscript_dir] do
   runcommand "tex2md #{manuscript_source_dir} #{ebook_manuscript_dir}"
 end
 
-task ebook_manuscript_listing_file => [ebook_data_dir] do
+directory ebook_data_dir
+file ebook_manuscript_listing_file => [manuscript_listing_source_file, ebook_data_dir] do
   File.open(ebook_manuscript_listing_file, 'w') do |f|
     manuscript_listing.each{|line| f.puts "- manuscript/#{line}.html"}
   end
 end
 
-task ebook_publication_file => [ebook_data_dir] do
+file ebook_publication_file => [publication_source_file, ebook_data_dir] do
   cp publication_source_file, ebook_publication_file
+end
+
+directory ebook_cover_dir
+file ebook_cover_file => [cover_source_file, ebook_cover_dir] do
+  cp cover_source_file, ebook_cover_file
 end
 
 desc 'Build the paperback interior PDF'
@@ -101,7 +100,8 @@ task paperback_format_file => [:paperback_format_files] do
   runcommand "cd #{paperback_format_dir} && rake"
 end
 
-task paperback_manuscript_listing_file => [paperback_dir] do
+directory paperback_dir
+file paperback_manuscript_listing_file => [manuscript_listing_source_file, paperback_dir] do
   File.open(paperback_manuscript_listing_file, 'w') do |f|
     manuscript_listing.each{|line| f.puts "\\input manuscript/#{line}"}
   end

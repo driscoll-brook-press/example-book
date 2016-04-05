@@ -49,15 +49,14 @@ publication = YAML.load_file(publication_source_file)
 manuscript_listing = YAML.load_file(manuscript_listing_source_file)
 cover_source_file = cover_source_dir / "#{publication['slug']}-cover-ebook.jpg"
 
-def files_in(dir:, except: [])
+def files_in(dir)
   FileList.new(dir / '**/*') do |l|
-    l.exclude { |f| except.include? f.pathmap('%f') }
     l.exclude { |f| File.directory? f }
   end
 end
 
-def copy_files(from:, to:, except: [])
-  sources = files_in(dir: from, except: except)
+def copy_files(from:, to:)
+  sources = files_in(from)
   targets = sources.pathmap("%{^#{from}/,#{to}/}p")
   sources.zip(targets).each do |source, target|
     target_dir = target.pathmap('%d')
@@ -70,7 +69,7 @@ def copy_files(from:, to:, except: [])
 end
 
 def translate_tex_to_markdown(from:, to:)
-  sources = files_in(dir: from)
+  sources = files_in(from)
   targets = sources.pathmap("%{^#{from}/,#{to}/}X.md")
   sources.zip(targets).each do |source, target|
     target_dir = target.pathmap('%d')
@@ -109,8 +108,8 @@ file mobi_file do
   cd(ebook_dir) { sh 'rake', 'check_kindle' }
 end
 
-EBOOK_BUILD_FILES = copy_files(from: ebook_template_source_dir, to: ebook_dir, except: %w[README.md])
-                      .include(copy_files(from: ebook_format_source_dir, to: ebook_dir, except: %w[README.md _todo.md]))
+EBOOK_BUILD_FILES = copy_files(from: ebook_template_source_dir, to: ebook_dir)
+                      .include(copy_files(from: ebook_format_source_dir, to: ebook_dir))
                       .include(translate_tex_to_markdown(from: manuscript_source_dir, to: ebook_manuscript_dir))
                       .include(ebook_cover_file, ebook_publication_file, ebook_manuscript_listing_file)
 
@@ -135,14 +134,14 @@ end
 file pdf_file do
   cd(paperback_dir) { sh 'rake' }
 end
-file pdf_file => copy_files(from: paperback_template_source_dir, to: paperback_dir, except: %[READMD.md])
+file pdf_file => copy_files(from: paperback_template_source_dir, to: paperback_dir)
 file pdf_file => copy_files(from: manuscript_source_dir, to: paperback_manuscript_dir)
 file pdf_file => [paperback_format_file, paperback_publication_file, paperback_manuscript_listing_file]
 
 file paperback_format_file do |_|
   cd(paperback_format_dir) { sh 'rake' }
 end
-file paperback_format_file => copy_files(from: paperback_format_source_dir, to: paperback_format_dir, except: %w[README.md])
+file paperback_format_file => copy_files(from: paperback_format_source_dir, to: paperback_format_dir)
 
 file paperback_manuscript_listing_file => [manuscript_listing_source_file, paperback_dir] do
   File.open(paperback_manuscript_listing_file, 'w') do |f|

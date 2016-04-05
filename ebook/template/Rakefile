@@ -1,19 +1,22 @@
 require 'rake/clean'
+require 'pathname'
 
-$build_dir = '_site'
-$epub_dir = '..'
-$fixed_dir = '_fixed'
+BUILD_DIR = Pathname('_site')
+EPUB_DIR = Pathname('_out')
+FIXED_DIR = '_fixed'
+
+directory EPUB_DIR
 
 desc 'Build and check standard and kindle epubs'
 task default: [:check_standard, :check_kindle ]
 
 desc 'Build standard epub'
-task standard_epub: [:standard_content, $epub_dir] do
+task standard_epub: [:standard_content, EPUB_DIR] do
   epub 'standard'
 end
 
 desc 'Build kindle epub'
-task kindle_epub: [:kindle_content, $epub_dir] do
+task kindle_epub: [:kindle_content, EPUB_DIR] do
   epub 'kindle'
 end
 
@@ -38,36 +41,30 @@ task standard_content: [] do
 end
 
 def build(edition)
-  runcommand "jekyll build --destination=#{content_dir(edition)} --config=_config.yaml,_#{edition}-edition.yaml"
+  sh 'jekyll', 'build', "--destination=#{content_dir(edition)}", "--config=_config.yaml,_#{edition}-edition.yaml"
 end
 
 def check(edition)
-  runcommand("epubcheck #{epub_file(edition)}")
+  sh 'epubcheck', epub_file(edition).to_s
 end
 
 def content_dir(edition)
-  "#{$build_dir}/#{edition}"
+  BUILD_DIR / edition
 end
 
 def epub(edition)
-  epub_file = File.expand_path(epub_file(edition))
+  epub_file = epub_file(edition).expand_path.to_s
   rm_f epub_file
-  runcommand("cd #{$fixed_dir}; zip #{epub_file} -rX0 mimetype")
-  runcommand("cd #{$fixed_dir}; zip #{epub_file} -rDX9 \. -x mimetype .DS_Store")
-  runcommand("cd #{content_dir(edition)}; zip #{epub_file} -rDX9 \. -x .DS_Store")
+  cd(FIXED_DIR) do
+    sh 'zip', epub_file, '-rX0', 'mimetype'
+    sh 'zip', epub_file, '-rDX9', '.', '-x', 'mimetype', '.DS_Store'
+  end
+  cd(content_dir(edition)) { sh 'zip', epub_file, '-rDX9', '.', '-x' '.DS_Store' }
 end
 
 def epub_file(edition)
-  "#{$epub_dir}/#{edition}.epub"
+  EPUB_DIR / "#{edition}.epub"
 end
 
-def runcommand(command, redirect: true, background: false)
-    full_command = "#{command}#{' 2>&1' if redirect}#{' &' if background}"
-    puts ">>> #{full_command}"
-    IO.popen(full_command).each_line{|line| puts line}
-end
-
-desc 'Clobber all files, then build and validate the epub file.'
-task fresh: [:clobber, :default]
-
-CLEAN.include $build_dir, epub_file('standard'), epub_file('kindle')
+CLEAN.include BUILD_DIR
+CLOBBER.include epub_file('standard'), epub_file('kindle')

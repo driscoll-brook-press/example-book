@@ -9,6 +9,5 @@
 - Pass dbp.fmt path to paperback rake file.
 - Epub details.
 - Product description in metadata file.
-- Improve `paperback/format/Rakefile`
-- Improve `paperback/template/Rakefile`
 - Improve `ebook/template/Rakefile`
+- Use common ebook content where possible

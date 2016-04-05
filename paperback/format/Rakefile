@@ -2,23 +2,18 @@ require 'rake/clean'
 
 format_name = 'dbp'
 
-tex_file = "#{format_name}.tex"
 format_file = "#{format_name}.fmt"
 log_file = "#{format_name}.log"
 
-task default: [:clean, :build, :log]
+desc 'Build the format file'
+task default: [:format]
 
 desc 'Build the format file'
-task build: [format_file]
+task format: [format_file]
 
-desc 'Show the log file'
-task :log do
-  print `cat #{log_file}`
+file format_file => FileList['*.tex'] do
+  sh 'pdftex', '-interaction=batchmode', '-etex', '-enc',  '-ini', format_name
 end
 
-file format_file do
-  `pdftex -interaction=batchmode -etex -enc -ini #{tex_file}`
-end
-
-CLEAN << format_file
 CLEAN << log_file
+CLOBBER << format_file

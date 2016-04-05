@@ -134,9 +134,10 @@ end
 file pdf_file do
   cd(paperback_dir) { sh 'rake' }
 end
+file pdf_file => [paperback_format_file]
 file pdf_file => copy_files(from: paperback_template_source_dir, to: paperback_dir)
 file pdf_file => copy_files(from: manuscript_source_dir, to: paperback_manuscript_dir)
-file pdf_file => [paperback_format_file, paperback_publication_file, paperback_manuscript_listing_file]
+file pdf_file => [paperback_publication_file, paperback_manuscript_listing_file]
 
 file paperback_format_file do |_|
   cd(paperback_format_dir) { sh 'rake' }

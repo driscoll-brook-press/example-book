@@ -5,39 +5,65 @@ BUILD_DIR = Pathname('_site')
 EPUB_DIR = Pathname('_out')
 FIXED_DIR = '_fixed'
 
+MOBI_CONFIG_FILE = Pathname('_mobi-edition.yaml')
+EPUB_CONFIG_FILE = Pathname('_epub-edition.yaml')
+
+SOURCE_FILES = FileList.new('**/*') do |l|
+  l.exclude /^_out/
+  l.exclude /^_site/
+  l.exclude('Rakefile')
+  l.exclude { |f| File.directory? f }
+end
+
+EPUB_SOURCE_FILES = SOURCE_FILES.clone.exclude(MOBI_CONFIG_FILE)
+MOBI_SOURCE_FILES = SOURCE_FILES.clone.exclude(EPUB_CONFIG_FILE).exclude(/^cover/)
+
+EPUB_BUILD_FILES = EPUB_SOURCE_FILES.clone
+                      .exclude(/^_/)
+                      .pathmap('_site/epub/%X%{md,html;scss,css}x')
+
+MOBI_BUILD_FILES = MOBI_SOURCE_FILES.clone
+                      .exclude(/^_/)
+                      .pathmap('_site/mobi/%X%{md,html;scss,css}x')
+
+task :list do
+  puts 'Epub build files:'
+  EPUB_BUILD_FILES.each { |f| puts "   #{f}"}
+end
+
 directory EPUB_DIR
 
-desc 'Build and check standard and kindle epubs'
-task default: [:check_standard, :check_kindle ]
+desc 'Build and check epub and mobi'
+task default: [:check_epub, :check_mobi ]
 
-desc 'Build standard epub'
-task standard_epub: [:standard_content, EPUB_DIR] do
-  epub 'standard'
+desc 'Build epub'
+task epub: [:epub_content, EPUB_DIR] do
+  epub 'epub'
 end
 
-desc 'Build kindle epub'
-task kindle_epub: [:kindle_content, EPUB_DIR] do
-  epub 'kindle'
+desc 'Build mobi'
+task mobi: [:mobi_content, EPUB_DIR] do
+  epub 'mobi'
 end
 
-desc 'Check standard epub'
-task check_standard: [:standard_epub] do
-  check 'standard'
+desc 'Check epub'
+task check_epub: [:epub] do
+  check 'epub'
 end
 
-desc 'Check kindle epub'
-task check_kindle: [:kindle_epub] do
-  check 'kindle'
+desc 'Check mobi epub'
+task check_mobi: [:mobi] do
+  check 'mobi'
 end
 
-desc 'Build kindle content files'
-task kindle_content: [] do
-  build 'kindle'
+desc 'Build mobi content files'
+task mobi_content: [] do
+  build 'mobi'
 end
 
-desc 'Build standard content files'
-task standard_content: [] do
-  build 'standard'
+desc 'Build epub content files'
+task epub_content: [] do
+  build 'epub'
 end
 
 def build(edition)
@@ -67,4 +93,4 @@ def epub_file(edition)
 end
 
 CLEAN.include BUILD_DIR
-CLOBBER.include epub_file('standard'), epub_file('kindle')
+CLOBBER.include epub_file('epub'), epub_file('mobi')

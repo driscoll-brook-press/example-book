@@ -25,8 +25,8 @@ ebook_manuscript_dir = ebook_dir / 'manuscript'
 ebook_cover_file = ebook_cover_dir / 'cover.jpg'
 ebook_manuscript_listing_file = ebook_data_dir / 'manuscript.yaml'
 ebook_publication_file = ebook_data_dir / 'publication.yaml'
-mobi_file = build_dir / 'kindle.epub'
-epub_file = build_dir / 'standard.epub'
+mobi_file = build_dir / 'mobi.epub'
+epub_file = build_dir / 'epub.epub'
 
 paperback_dir = build_dir / 'paperback'
 paperback_format_dir = paperback_dir / 'format'
@@ -101,11 +101,11 @@ desc 'Build the paperback PDF file'
 task paperback: pdf_file
 
 file epub_file do
-  cd(ebook_dir) { sh 'rake', 'check_standard' }
+  cd(ebook_dir) { sh 'rake', 'check_epub' }
 end
 
 file mobi_file do
-  cd(ebook_dir) { sh 'rake', 'check_kindle' }
+  cd(ebook_dir) { sh 'rake', 'check_mobi' }
 end
 
 EBOOK_BUILD_FILES = copy_files(from: ebook_template_source_dir, to: ebook_dir)
@@ -115,6 +115,10 @@ EBOOK_BUILD_FILES = copy_files(from: ebook_template_source_dir, to: ebook_dir)
 
 %w[epub_file mobi_file].each do |target|
   file epub_file => EBOOK_BUILD_FILES
+end
+
+task list: EBOOK_BUILD_FILES do
+  cd(ebook_dir) { sh 'rake', 'list' }
 end
 
 file ebook_manuscript_listing_file => [manuscript_listing_source_file, ebook_data_dir] do

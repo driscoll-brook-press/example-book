@@ -1,2 +1,0 @@
-include-cover: false
-exclude: [cover, Rakefile, README.md]

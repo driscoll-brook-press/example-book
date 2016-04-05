@@ -1,0 +1,2 @@
+include-cover: false
+exclude: [cover, Rakefile]

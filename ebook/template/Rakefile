@@ -3,10 +3,12 @@ require 'pathname'
 
 BUILD_DIR = Pathname('_site')
 EPUB_DIR = Pathname('_out')
-FIXED_DIR = '_fixed'
+FIXED_DIR = Pathname('_fixed')
 
-MOBI_CONFIG_FILE = Pathname('_mobi-edition.yaml')
 EPUB_CONFIG_FILE = Pathname('_epub-edition.yaml')
+MOBI_CONFIG_FILE = Pathname('_mobi-edition.yaml')
+
+FIXED_FILES = FileList[FIXED_DIR / '**/*']
 
 SOURCE_FILES = FileList.new('**/*') do |l|
   l.exclude /^_out/
@@ -16,81 +18,69 @@ SOURCE_FILES = FileList.new('**/*') do |l|
 end
 
 EPUB_SOURCE_FILES = SOURCE_FILES.clone.exclude(MOBI_CONFIG_FILE)
-MOBI_SOURCE_FILES = SOURCE_FILES.clone.exclude(EPUB_CONFIG_FILE).exclude(/^cover/)
-
+EPUB_BUILD_DIR = BUILD_DIR / 'epub'
 EPUB_BUILD_FILES = EPUB_SOURCE_FILES.clone
                       .exclude(/^_/)
-                      .pathmap('_site/epub/%X%{md,html;scss,css}x')
+                      .pathmap("#{EPUB_BUILD_DIR}/%X%{md,html;scss,css}x")
+EPUB_OPF_BUILD_FILE = EPUB_BUILD_DIR / 'package.opf'
+file EPUB_OPF_BUILD_FILE => EPUB_SOURCE_FILES do
+  sh 'jekyll', 'build', "--destination=#{EPUB_BUILD_DIR}", "--config=_config.yaml,#{EPUB_CONFIG_FILE}"
+end
+EPUB_FILE = EPUB_DIR / 'epub.epub'
 
+MOBI_SOURCE_FILES = SOURCE_FILES.clone.exclude(EPUB_CONFIG_FILE).exclude(/^cover/)
+MOBI_BUILD_DIR = BUILD_DIR / 'mobi'
 MOBI_BUILD_FILES = MOBI_SOURCE_FILES.clone
                       .exclude(/^_/)
-                      .pathmap('_site/mobi/%X%{md,html;scss,css}x')
-
-task :list do
-  puts 'Epub build files:'
-  EPUB_BUILD_FILES.each { |f| puts "   #{f}"}
+                      .pathmap("#{MOBI_BUILD_DIR}/%X%{md,html;scss,css}x")
+MOBI_OPF_BUILD_FILE = MOBI_BUILD_DIR / 'package.opf'
+file MOBI_OPF_BUILD_FILE => MOBI_SOURCE_FILES do
+  sh 'jekyll', 'build', "--destination=#{MOBI_BUILD_DIR}", "--config=_config.yaml,#{MOBI_CONFIG_FILE}"
 end
+MOBI_FILE = EPUB_DIR / 'mobi.epub'
 
 directory EPUB_DIR
 
 desc 'Build and check epub and mobi'
-task default: [:check_epub, :check_mobi ]
+task default: [ :check_epub, :check_mobi ]
 
 desc 'Build epub'
-task epub: [:epub_content, EPUB_DIR] do
-  epub 'epub'
-end
+task epub: [EPUB_FILE]
 
 desc 'Build mobi'
-task mobi: [:mobi_content, EPUB_DIR] do
-  epub 'mobi'
-end
+task mobi: [MOBI_FILE]
 
 desc 'Check epub'
 task check_epub: [:epub] do
-  check 'epub'
+  check EPUB_FILE
 end
 
 desc 'Check mobi epub'
 task check_mobi: [:mobi] do
-  check 'mobi'
+  check MOBI_FILE
 end
 
-desc 'Build mobi content files'
-task mobi_content: [] do
-  build 'mobi'
+file EPUB_FILE => [EPUB_OPF_BUILD_FILE, EPUB_DIR] + FIXED_FILES do
+  epub EPUB_FILE, EPUB_BUILD_DIR
 end
 
-desc 'Build epub content files'
-task epub_content: [] do
-  build 'epub'
+file MOBI_FILE => [MOBI_OPF_BUILD_FILE, EPUB_DIR] + FIXED_FILES do
+  epub MOBI_FILE, MOBI_BUILD_DIR
 end
 
-def build(edition)
-  sh 'jekyll', 'build', "--destination=#{content_dir(edition)}", "--config=_config.yaml,_#{edition}-edition.yaml"
+def check(file)
+  sh 'epubcheck', file.to_s
 end
 
-def check(edition)
-  sh 'epubcheck', epub_file(edition).to_s
-end
-
-def content_dir(edition)
-  BUILD_DIR / edition
-end
-
-def epub(edition)
-  epub_file = epub_file(edition).expand_path.to_s
+def epub(epub_file, content_dir)
+  epub_file = epub_file.expand_path.to_s
   rm_f epub_file
   cd(FIXED_DIR) do
     sh 'zip', epub_file, '-rX0', 'mimetype'
     sh 'zip', epub_file, '-rDX9', '.', '-x', 'mimetype', '.DS_Store'
   end
-  cd(content_dir(edition)) { sh 'zip', epub_file, '-rDX9', '.', '-x' '.DS_Store' }
-end
-
-def epub_file(edition)
-  EPUB_DIR / "#{edition}.epub"
+  cd(content_dir) { sh 'zip', epub_file, '-rDX9', '.', '-x' '.DS_Store' }
 end
 
 CLEAN.include BUILD_DIR
-CLOBBER.include epub_file('epub'), epub_file('mobi')
+CLOBBER.include EPUB_DIR

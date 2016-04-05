@@ -49,15 +49,15 @@ publication = YAML.load_file(publication_source_file)
 manuscript_listing = YAML.load_file(manuscript_listing_source_file)
 cover_source_file = cover_source_dir / "#{publication['slug']}-cover-ebook.jpg"
 
-def files_in(from:, except: [])
-  FileList.new(from / '**/*') do |l|
+def files_in(dir:, except: [])
+  FileList.new(dir / '**/*') do |l|
     l.exclude { |f| except.include? f.pathmap('%f') }
     l.exclude { |f| File.directory? f }
   end
 end
 
 def copy_files(from:, to:, except: [])
-  sources = files_in(from: from, except: except)
+  sources = files_in(dir: from, except: except)
   targets = sources.pathmap("%{^#{from}/,#{to}/}p")
   sources.zip(targets).each do |source, target|
     target_dir = target.pathmap('%d')
@@ -70,7 +70,7 @@ def copy_files(from:, to:, except: [])
 end
 
 def translate_tex_to_markdown(from:, to:)
-  sources = files_in(from: from)
+  sources = files_in(dir: from)
   targets = sources.pathmap("%{^#{from}/,#{to}/}X.md")
   sources.zip(targets).each do |source, target|
     target_dir = target.pathmap('%d')

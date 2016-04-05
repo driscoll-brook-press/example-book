@@ -101,11 +101,11 @@ desc 'Build the paperback PDF file'
 task paperback: pdf_file
 
 file epub_file do
-  cd(ebook_dir) { sh 'rake', 'check_epub' }
+  cd(ebook_dir) { sh 'rake', 'epub' }
 end
 
 file mobi_file do
-  cd(ebook_dir) { sh 'rake', 'check_mobi' }
+  cd(ebook_dir) { sh 'rake', 'mobi' }
 end
 
 EBOOK_BUILD_FILES = copy_files(from: ebook_template_source_dir, to: ebook_dir)

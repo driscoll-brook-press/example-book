@@ -42,30 +42,22 @@ MOBI_FILE = EPUB_DIR / 'mobi.epub'
 directory EPUB_DIR
 
 desc 'Build and check epub and mobi'
-task default: [ :check_epub, :check_mobi ]
+task default: [ :epub, :mobi ]
 
-desc 'Build epub'
+desc 'Build and check epub'
 task epub: [EPUB_FILE]
 
-desc 'Build mobi'
+desc 'Build amd check mobi'
 task mobi: [MOBI_FILE]
 
-desc 'Check epub'
-task check_epub: [:epub] do
-  check EPUB_FILE
-end
-
-desc 'Check mobi epub'
-task check_mobi: [:mobi] do
-  check MOBI_FILE
-end
-
-file EPUB_FILE => [EPUB_OPF_BUILD_FILE, EPUB_DIR] + FIXED_FILES do
+file EPUB_FILE => [EPUB_OPF_BUILD_FILE, EPUB_DIR] + FIXED_FILES do |t|
   epub EPUB_FILE, EPUB_BUILD_DIR
+  sh 'epubcheck', t.name
 end
 
-file MOBI_FILE => [MOBI_OPF_BUILD_FILE, EPUB_DIR] + FIXED_FILES do
+file MOBI_FILE => [MOBI_OPF_BUILD_FILE, EPUB_DIR] + FIXED_FILES do |t|
   epub MOBI_FILE, MOBI_BUILD_DIR
+  sh 'epubcheck', t.name
 end
 
 def check(file)

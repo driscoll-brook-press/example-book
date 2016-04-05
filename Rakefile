@@ -98,22 +98,25 @@ task epub: epub_file
 desc 'Build the mobi file (sans cover)'
 task mobi: mobi_file
 
-desc 'Build the paperback interior PDF'
+desc 'Build the paperback PDF file'
 task paperback: pdf_file
 
-
-file epub_file => [:ebook_build_files] do
+file epub_file do
   cd(ebook_dir) { sh 'rake', 'check_standard' }
 end
 
-file mobi_file => [:ebook_build_files] do
+file mobi_file do
   cd(ebook_dir) { sh 'rake', 'check_kindle' }
 end
 
-task ebook_build_files: [ ebook_cover_file, ebook_publication_file, ebook_manuscript_listing_file ]
-task ebook_build_files: copy_files(from: ebook_template_source_dir, to: ebook_dir, except: %w[README.md])
-task ebook_build_files: copy_files(from: ebook_format_source_dir, to: ebook_dir, except: %w[README.md _todo.md])
-task ebook_build_files: translate_tex_to_markdown(from: manuscript_source_dir, to: ebook_manuscript_dir)
+EBOOK_BUILD_FILES = copy_files(from: ebook_template_source_dir, to: ebook_dir, except: %w[README.md])
+                      .include(copy_files(from: ebook_format_source_dir, to: ebook_dir, except: %w[README.md _todo.md]))
+                      .include(translate_tex_to_markdown(from: manuscript_source_dir, to: ebook_manuscript_dir))
+                      .include(ebook_cover_file, ebook_publication_file, ebook_manuscript_listing_file)
+
+%w[epub_file mobi_file].each do |target|
+  file epub_file => EBOOK_BUILD_FILES
+end
 
 file ebook_manuscript_listing_file => [manuscript_listing_source_file, ebook_data_dir] do
   File.open(ebook_manuscript_listing_file, 'w') do |f|

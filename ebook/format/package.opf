@@ -22,6 +22,8 @@ manifest: false
     {% for notice in publication.copyright %}
       <dc:rights>{{ notice[1].material}} © {{ notice[1].date }} {{ notice[1].owner }}</dc:rights>
     {% endfor %}
+    {% unless site.exclude contains 'cover' %}<meta name="cover" content="{{ ebook.cover.image | slugify }}" />{% endunless %}
+
   </metadata>
   <manifest>
     {% for page in site.pages %}{% if page.manifest %}{% include manifest-entry.xml path=page.url %}{% endif %}{% endfor %}

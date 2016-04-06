@@ -7,7 +7,7 @@ layout:
   {% assign manuscript = site.data.manuscript %}
   {% assign publication = site.data.publication %}
   <head>
-    <meta name='dtb:uid' content='{{ publication.isbn }}' />
+    <meta name='dtb:uid' content='{{ publication.isbn.ebook }}' />
   </head>
   <docTitle>
     <text>{{ publication.title }}</text>

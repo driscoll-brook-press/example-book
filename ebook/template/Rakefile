@@ -26,13 +26,13 @@ def edition(name:, excludes: [])
   desc "Build and check #{name}"
   task name => [epub_file]
 
-  file opf_file => sources do
-    sh 'jekyll', 'build', "--destination=#{content_dir}", "--config=_config.yaml,#{config_file}"
-  end
-
   file epub_file => [opf_file, OUT_DIR] + FIXED_FILES do |t|
     epub t.name, content_dir
     sh 'epubcheck', t.name
+  end
+
+  file opf_file => sources do
+    sh 'jekyll', 'build', "--destination=#{content_dir}", "--config=_config.yaml,#{config_file}"
   end
 end
 

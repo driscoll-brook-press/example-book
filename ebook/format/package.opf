@@ -28,7 +28,7 @@ manifest: false
     {% for file in site.static_files %}{% include manifest-entry.xml path=file.path %}{% endfor %}
   </manifest>
   <spine toc='{{ 'toc.ncx' | slugify }}'>
-    {% if site.include-cover %}{% include spine-entry.xml path=ebook.cover.page %}{% endif %}
+    {% unless site.exclude contains 'cover' %}{% include spine-entry.xml path=ebook.cover.page %}{% endunless %}
     {% for path in ebook.frontmatter %}{% include spine-entry.xml path=path %}{% endfor %}
     {% for path in manuscript %}{% include spine-entry.xml path=path %}{% endfor %}
     {% for path in ebook.backmatter %}{% include spine-entry.xml path=path %}{% endfor %}

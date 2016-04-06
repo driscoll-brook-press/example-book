@@ -60,18 +60,14 @@ file MOBI_FILE => [MOBI_OPF_BUILD_FILE, EPUB_DIR] + FIXED_FILES do |t|
   sh 'epubcheck', t.name
 end
 
-def check(file)
-  sh 'epubcheck', file.to_s
-end
-
-def epub(epub_file, content_dir)
-  epub_file = epub_file.expand_path.to_s
-  rm_f epub_file
+def epub(fname, content_dir)
+  full_name = fname.expand_path.to_s
+  rm_f full_name
   cd(FIXED_DIR) do
-    sh 'zip', epub_file, '-rX0', 'mimetype'
-    sh 'zip', epub_file, '-rDX9', '.', '-x', 'mimetype', '.DS_Store'
+    sh 'zip', full_name, '-rX0', 'mimetype'
+    sh 'zip', full_name, '-rDX9', '.', '-x', 'mimetype'
   end
-  cd(content_dir) { sh 'zip', epub_file, '-rDX9', '.', '-x' '.DS_Store' }
+  cd(content_dir) { sh 'zip', full_name, '-rDX9', '.' }
 end
 
 CLEAN.include BUILD_DIR

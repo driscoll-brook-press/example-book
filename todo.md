@@ -7,4 +7,3 @@
 - Build paperback format in a dir of its own (not under paperback files).
 - Pass dbp.fmt path to paperback rake file.
 - Product description in metadata file.
-- Improve `ebook/template/Rakefile`

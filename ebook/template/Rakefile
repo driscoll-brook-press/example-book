@@ -15,7 +15,7 @@ SOURCE_FILES = FileList.new('**/*') do |l|
 end
 
 def edition(name:, excludes: [])
-  config_file = Pathname("_#{name}-edition.yaml")
+  config_file = Pathname("_editions/#{name}.yaml")
   sources = SOURCE_FILES.clone.exclude(excludes).include(config_file)
   content_dir = BUILD_DIR / name
   opf_file = content_dir / 'package.opf'
@@ -41,8 +41,8 @@ directory OUT_DIR
 desc 'Build and check all files'
 task :default
 
-edition(name: 'epub')
-edition(name: 'mobi', excludes: /^cover/)
+edition(name: 'withcover')
+edition(name: 'sanscover', excludes: /^cover/)
 
 def epub(fname, content_dir)
   full_name = File.expand_path(fname)

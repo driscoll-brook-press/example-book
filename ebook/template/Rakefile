@@ -19,7 +19,7 @@ BUILD_DIR = Pathname('_site')
 OPF_FILE = BUILD_DIR / 'package.opf'
 
 OUT_DIR = Pathname('_out')
-EPUB_FILE = (OUT_DIR / PUBLICATION['slug']).ext('epub').expand_path.to_s
+EPUB_FILE = Pathname(ENV['DBP_EPUB_FILE']) || (OUT_DIR / PUBLICATION['slug']).ext('epub').expand_path.to_s
 EPUB_CHECK_LOG_FILE = EPUB_FILE.ext('json')
 MOBI_FILE = EPUB_FILE.ext('mobi')
 
@@ -39,21 +39,23 @@ task mobi: [MOBI_FILE]
 desc 'Check the epub file'
 task check: [EPUB_CHECK_LOG_FILE]
 
-file EPUB_FILE => [OPF_FILE, OUT_DIR] + FIXED_FILES do |t|
-  rm_f EPUB_FILE
+directory EPUB_FILE.dirname
+
+file EPUB_FILE => [OPF_FILE, EPUB_FILE.dirname] + FIXED_FILES do |t|
+  rm_f t.name
   cd(FIXED_DIR) do
-    sh 'zip', EPUB_FILE, '-rX0', 'mimetype'
-    sh 'zip', EPUB_FILE, '-rDX9', '.', '-x', 'mimetype'
+    sh 'zip', t.name, '-rX0', 'mimetype'
+    sh 'zip', t.name, '-rDX9', '.', '-x', 'mimetype'
   end
-  cd(BUILD_DIR) { sh 'zip', EPUB_FILE, '-rDX9', '.' }
+  cd(BUILD_DIR) { sh 'zip', t.name, '-rDX9', '.' }
 end
 
 file MOBI_FILE => [EPUB_FILE] do
   sh 'kindlegen', EPUB_FILE
 end
 
-file EPUB_CHECK_LOG_FILE => [EPUB_FILE] do
-  sh 'epubcheck', EPUB_FILE, '--json', EPUB_CHECK_LOG_FILE
+file EPUB_CHECK_LOG_FILE => [EPUB_FILE] do |t|
+  sh 'epubcheck', EPUB_FILE.to_s, '--json', t.name
 end
 
 # This actually builds all of the content files,

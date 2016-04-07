@@ -1,11 +1,18 @@
 require 'rake/clean'
 require 'pathname'
 require 'yaml'
+require 'rake/ext/pathname'
 
 PUBLICATION_SOURCE_DIR = Pathname('publication')
 PUBLICATION_SOURCE_FILE = PUBLICATION_SOURCE_DIR / 'publication.yaml'
 PUBLICATION = YAML.load_file(PUBLICATION_SOURCE_FILE)
 SLUG = PUBLICATION['slug']
+
+OUT_DIR = Pathname('uploads').expand_path
+EPUB_FILE = (OUT_DIR / SLUG).ext('epub')
+MOBI_FILE = EPUB_FILE.ext('mobi')
+file MOBI_FILE
+file EPUB_FILE
 
 DBP_TMP_DIR = Pathname('/var/tmp/dbp')
 BUILD_DIR = DBP_TMP_DIR + SLUG
@@ -30,8 +37,6 @@ ebook_manuscript_dir = ebook_dir / 'manuscript'
 ebook_cover_file = ebook_cover_dir / 'cover.jpg'
 ebook_manuscript_listing_file = ebook_data_dir / 'manuscript.yaml'
 ebook_publication_file = ebook_data_dir / 'publication.yaml'
-mobi_file = BUILD_DIR / 'sanscover.epub'
-epub_file = BUILD_DIR / 'withcover.epub'
 
 paperback_dir = BUILD_DIR / 'paperback'
 paperback_format_dir = paperback_dir / 'format'
@@ -44,8 +49,6 @@ pdf_file = BUILD_DIR / 'book.pdf'
 directory ebook_dir
 directory ebook_data_dir
 directory ebook_cover_dir
-file mobi_file
-file epub_file
 
 directory paperback_dir
 file pdf_file
@@ -96,10 +99,10 @@ desc 'Build all ebook formats'
 task ebooks: [:epub, :mobi]
 
 desc 'Build the epub file'
-task epub: epub_file
+task epub: EPUB_FILE
 
 desc 'Build the mobi file'
-task mobi: mobi_file
+task mobi: MOBI_FILE
 
 desc 'Build the paperback PDF file'
 task paperback: pdf_file
@@ -109,12 +112,12 @@ EBOOK_BUILD_FILES = copy_files(from: ebook_format_source_dir, to: ebook_dir)
                       .include(translate_tex_to_markdown(from: manuscript_source_dir, to: ebook_manuscript_dir))
                       .include(ebook_cover_file, ebook_publication_file, ebook_manuscript_listing_file)
 
-file epub_file => EBOOK_BUILD_FILES do
-  cd(ebook_dir) { sh 'rake', 'check'}
+file EPUB_FILE => EBOOK_BUILD_FILES do |t|
+  cd(ebook_dir) { sh 'rake', "DBP_EPUB_FILE=#{t.name}", 'check'}
 end
 
-file mobi_file do
-  cd(ebook_dir) { sh 'rake', 'mobi' }
+file MOBI_FILE => EPUB_FILE do |t|
+  cd(ebook_dir) { sh 'rake', "DBP_MOBI_FILE=#{t.name}", 'mobi' }
 end
 
 file ebook_manuscript_listing_file => [manuscript_listing_source_file, ebook_data_dir] do
@@ -164,4 +167,4 @@ file paperback_publication_file => [PUBLICATION_SOURCE_FILE, paperback_dir] do |
 end
 
 CLEAN.include BUILD_DIR
-CLOBBER.include epub_file, mobi_file, pdf_file
+CLOBBER.include EPUB_FILE, MOBI_FILE, pdf_file

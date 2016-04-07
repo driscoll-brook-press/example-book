@@ -2,15 +2,20 @@ require 'rake/clean'
 require 'pathname'
 require 'yaml'
 
+PUBLICATION_SOURCE_DIR = Pathname('publication')
+PUBLICATION_SOURCE_FILE = PUBLICATION_SOURCE_DIR / 'publication.yaml'
+PUBLICATION = YAML.load_file(PUBLICATION_SOURCE_FILE)
+SLUG = PUBLICATION['slug']
+
+DBP_TMP_DIR = Pathname('/var/tmp/dbp')
+BUILD_DIR = DBP_TMP_DIR + SLUG
+
 cover_source_dir = Pathname('covers')
 ebook_source_dir = Pathname('ebook')
 paperback_source_dir = Pathname('paperback')
-build_dir = Pathname('build')
 
-publication_source_dir = Pathname('publication')
-manuscript_source_dir = publication_source_dir / 'manuscript'
-manuscript_listing_source_file = publication_source_dir / 'manuscript.yaml'
-publication_source_file = publication_source_dir / 'publication.yaml'
+manuscript_source_dir = PUBLICATION_SOURCE_DIR / 'manuscript'
+manuscript_listing_source_file = PUBLICATION_SOURCE_DIR / 'manuscript.yaml'
 
 ebook_format_source_dir = ebook_source_dir / 'format'
 ebook_template_source_dir = ebook_source_dir / 'template'
@@ -18,23 +23,23 @@ ebook_template_source_dir = ebook_source_dir / 'template'
 paperback_format_source_dir = paperback_source_dir / 'format'
 paperback_template_source_dir = paperback_source_dir / 'template'
 
-ebook_dir = build_dir / 'ebooks'
+ebook_dir = BUILD_DIR / 'ebooks'
 ebook_cover_dir = ebook_dir / 'cover'
 ebook_data_dir = ebook_dir / '_data'
 ebook_manuscript_dir = ebook_dir / 'manuscript'
 ebook_cover_file = ebook_cover_dir / 'cover.jpg'
 ebook_manuscript_listing_file = ebook_data_dir / 'manuscript.yaml'
 ebook_publication_file = ebook_data_dir / 'publication.yaml'
-mobi_file = build_dir / 'sanscover.epub'
-epub_file = build_dir / 'withcover.epub'
+mobi_file = BUILD_DIR / 'sanscover.epub'
+epub_file = BUILD_DIR / 'withcover.epub'
 
-paperback_dir = build_dir / 'paperback'
+paperback_dir = BUILD_DIR / 'paperback'
 paperback_format_dir = paperback_dir / 'format'
 paperback_format_file = paperback_format_dir / 'dbp.fmt'
 paperback_manuscript_dir = paperback_dir / 'manuscript'
 paperback_manuscript_listing_file = paperback_dir / 'manuscript.tex'
 paperback_publication_file = paperback_dir / 'publication.tex'
-pdf_file = build_dir / 'book.pdf'
+pdf_file = BUILD_DIR / 'book.pdf'
 
 directory ebook_dir
 directory ebook_data_dir
@@ -45,9 +50,8 @@ file epub_file
 directory paperback_dir
 file pdf_file
 
-publication = YAML.load_file(publication_source_file)
 manuscript_listing = YAML.load_file(manuscript_listing_source_file)
-cover_source_file = cover_source_dir / "#{publication['slug']}-cover-ebook.jpg"
+cover_source_file = cover_source_dir / "#{SLUG}-cover-ebook.jpg"
 
 def files_in(dir)
   FileList.new(dir / '**/*') do |l|
@@ -119,12 +123,12 @@ file ebook_manuscript_listing_file => [manuscript_listing_source_file, ebook_dat
   end
 end
 
-file ebook_publication_file => [publication_source_file, ebook_data_dir] do
-  cp publication_source_file, ebook_publication_file
+file ebook_publication_file => [PUBLICATION_SOURCE_FILE, ebook_data_dir] do |t|
+  cp PUBLICATION_SOURCE_FILE, t.name
 end
 
-file ebook_cover_file => [cover_source_file, ebook_cover_dir] do
-  cp cover_source_file, ebook_cover_file
+file ebook_cover_file => [cover_source_file, ebook_cover_dir] do |t|
+  cp cover_source_file, t.name
 end
 
 file pdf_file do
@@ -146,10 +150,10 @@ file paperback_manuscript_listing_file => [manuscript_listing_source_file, paper
   end
 end
 
-file paperback_publication_file => [publication_source_file, paperback_dir] do
-  File.open(paperback_publication_file, 'w') do |f|
-    f.puts "\\title={#{publication['title']}}"
-    f.puts "\\author={#{publication['author']['name']}}"
+file paperback_publication_file => [PUBLICATION_SOURCE_FILE, paperback_dir] do |t|
+  File.open(t.name, 'w') do |f|
+    f.puts "\\title={#{PUBLICATION['title']}}"
+    f.puts "\\author={#{PUBLICATION['author']['name']}}"
     f.puts '\\isbns={'
     f.puts publication['isbn'].map{|k,v| "ISBN: #{v} (#{k})"}.join('\\break ')
     f.puts '}'
@@ -159,5 +163,5 @@ file paperback_publication_file => [publication_source_file, paperback_dir] do
   end
 end
 
-# CLEAN << build_out
-CLOBBER << build_dir
+CLEAN.include BUILD_DIR
+CLOBBER.include epub_file, mobi_file, pdf_file

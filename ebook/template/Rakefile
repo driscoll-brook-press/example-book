@@ -1,57 +1,64 @@
 require 'rake/clean'
 require 'pathname'
+require 'yaml'
+require 'rake/ext/pathname'
 
-BUILD_DIR = Pathname('_site')
-OUT_DIR = Pathname('_out')
 FIXED_DIR = Pathname('_fixed')
 FIXED_FILES = FileList[FIXED_DIR / '**/*']
+PUBLICATION = YAML.load_file('_data/publication.yaml')
 
 SOURCE_FILES = FileList.new('**/*') do |l|
   l.exclude { |f| File.directory? f }
   l.exclude /^_out/
   l.exclude /^_site/
-  l.exclude /-edition.yaml$/
   l.exclude('Rakefile')
 end
 
-def edition(name:, excludes: [])
-  config_file = Pathname("_editions/#{name}.yaml")
-  sources = SOURCE_FILES.clone.exclude(excludes).include(config_file)
-  content_dir = BUILD_DIR / name
-  opf_file = content_dir / 'package.opf'
-  epub_file = OUT_DIR / "#{name}.epub"
+BUILD_DIR = Pathname('_site')
+OPF_FILE = BUILD_DIR / 'package.opf'
 
-  task default: [name]
-
-  desc "Build and check #{name}"
-  task name => [epub_file]
-
-  file epub_file => [opf_file, OUT_DIR] + FIXED_FILES do |t|
-    epub t.name, content_dir
-    sh 'epubcheck', t.name
-  end
-
-  file opf_file => sources do
-    sh 'jekyll', 'build', "--destination=#{content_dir}", "--config=_config.yaml,#{config_file}"
-  end
-end
+OUT_DIR = Pathname('_out')
+EPUB_FILE = (OUT_DIR / PUBLICATION['slug']).ext('epub').expand_path.to_s
+EPUB_CHECK_LOG_FILE = EPUB_FILE.ext('json')
+MOBI_FILE = EPUB_FILE.ext('mobi')
 
 directory OUT_DIR
 
-desc 'Build and check all files'
-task :default
+task default: [:all]
 
-edition(name: 'withcover')
-edition(name: 'sanscover', excludes: /^cover/)
+desc 'Build and check all formats (default)'
+task all: [:check, :mobi]
 
-def epub(fname, content_dir)
-  full_name = File.expand_path(fname)
-  rm_f full_name
+desc 'Build the epub file'
+task epub: [EPUB_FILE]
+
+desc 'Build the mobi file'
+task mobi: [MOBI_FILE]
+
+desc 'Check the epub file'
+task check: [EPUB_CHECK_LOG_FILE]
+
+file EPUB_FILE => [OPF_FILE, OUT_DIR] + FIXED_FILES do |t|
+  rm_f EPUB_FILE
   cd(FIXED_DIR) do
-    sh 'zip', full_name, '-rX0', 'mimetype'
-    sh 'zip', full_name, '-rDX9', '.', '-x', 'mimetype'
+    sh 'zip', EPUB_FILE, '-rX0', 'mimetype'
+    sh 'zip', EPUB_FILE, '-rDX9', '.', '-x', 'mimetype'
   end
-  cd(content_dir) { sh 'zip', full_name, '-rDX9', '.' }
+  cd(BUILD_DIR) { sh 'zip', EPUB_FILE, '-rDX9', '.' }
+end
+
+file MOBI_FILE => [EPUB_FILE] do
+  sh 'kindlegen', EPUB_FILE
+end
+
+file EPUB_CHECK_LOG_FILE => [EPUB_FILE] do
+  sh 'epubcheck', EPUB_FILE, '--json', EPUB_CHECK_LOG_FILE
+end
+
+# This actually builds all of the content files,
+# not only the OPF file.
+file OPF_FILE => SOURCE_FILES do
+  sh 'jekyll', 'build'
 end
 
 CLEAN.include BUILD_DIR

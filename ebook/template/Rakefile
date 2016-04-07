@@ -6,12 +6,13 @@ require 'rake/ext/pathname'
 FIXED_DIR = Pathname('_fixed')
 FIXED_FILES = FileList[FIXED_DIR / '**/*']
 PUBLICATION = YAML.load_file('_data/publication.yaml')
+CONFIG = YAML.load_file('_config.yaml')
 
 SOURCE_FILES = FileList.new('**/*') do |l|
   l.exclude { |f| File.directory? f }
   l.exclude /^_out/
   l.exclude /^_site/
-  l.exclude('Rakefile')
+  l.exclude(CONFIG['exclude'])
 end
 
 BUILD_DIR = Pathname('_site')

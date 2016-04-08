@@ -1,13 +1,12 @@
 require 'rake/clean'
 require 'pathname'
+require 'rake/ext/pathname'
 
-slug = 'book'
+PDF_FILE = Pathname(ENV['DBP_PDF_FILE'] || 'book.pdf')
+OUT_DIR = PDF_FILE.dirname
 
-OUT_DIR = Pathname(ENV['DBP_OUT_DIR'] || Pathname('.')).to_s
 directory OUT_DIR
 
-pdf_file = "#{slug}.pdf"
-log_file = "#{slug}.log"
 fmt_name = 'format/dbp'
 fmt_file = "#{fmt_name}.fmt"
 
@@ -15,13 +14,12 @@ desc 'Typeset the book as a PDF file'
 task default: [:pdf]
 
 desc 'Typeset the book as a PDF file'
-task pdf: [pdf_file]
+task pdf: [PDF_FILE]
 
-file pdf_file => [OUT_DIR] do
-  sh 'pdftex', '-interaction=batchmode', '-fmt', fmt_name, '-output-directory', OUT_DIR, slug
+file PDF_FILE => [OUT_DIR] do |t|
+  sh 'pdftex', '-interaction=batchmode', '-fmt', fmt_name, '-jobname', t.name.pathmap('%X'), 'book'
 end
-file pdf_file => FileList['*.tex', 'author/*.tex', 'manuscript/*.tex', 'preview/*.tex']
-file pdf_file => [fmt_file]
+file PDF_FILE => FileList['*.tex', 'author/*.tex', 'manuscript/*.tex', 'preview/*.tex']
+file PDF_FILE => [fmt_file]
 
-CLEAN.include(log_file)
-CLOBBER.include(pdf_file)
+CLOBBER.include(PDF_FILE, PDF_FILE.ext('log'))

@@ -11,8 +11,10 @@ SLUG = PUBLICATION['slug']
 OUT_DIR = Pathname('uploads').expand_path
 EPUB_FILE = (OUT_DIR / SLUG).ext('epub')
 MOBI_FILE = EPUB_FILE.ext('mobi')
+PDF_FILE = EPUB_FILE.ext('pdf')
 file EPUB_FILE
 file MOBI_FILE
+file PDF_FILE
 
 DBP_TMP_DIR = Pathname('/var/tmp/dbp')
 BUILD_DIR = DBP_TMP_DIR + SLUG
@@ -44,14 +46,12 @@ paperback_format_file = paperback_format_dir / 'dbp.fmt'
 paperback_manuscript_dir = paperback_dir / 'manuscript'
 paperback_manuscript_listing_file = paperback_dir / 'manuscript.tex'
 paperback_publication_file = paperback_dir / 'publication.tex'
-pdf_file = BUILD_DIR / 'book.pdf'
 
 directory ebook_dir
 directory ebook_data_dir
 directory ebook_cover_dir
 
 directory paperback_dir
-file pdf_file
 
 manuscript_listing = YAML.load_file(manuscript_listing_source_file)
 cover_source_file = cover_source_dir / "#{SLUG}-cover-ebook.jpg"
@@ -105,7 +105,7 @@ desc 'Build the mobi file'
 task mobi: MOBI_FILE
 
 desc 'Build the paperback PDF file'
-task paperback: pdf_file
+task paperback: PDF_FILE
 
 EBOOK_BUILD_FILES = copy_files(from: ebook_format_source_dir, to: ebook_dir)
                       .include(copy_files(from: ebook_template_source_dir, to: ebook_dir))
@@ -134,13 +134,13 @@ file ebook_cover_file => [cover_source_file, ebook_cover_dir] do |t|
   cp cover_source_file, t.name
 end
 
-file pdf_file do
-  cd(paperback_dir) { sh 'rake', "DBP_OUT_DIR=#{OUT_DIR}" }
+file PDF_FILE do |t|
+  cd(paperback_dir) { sh 'rake', "DBP_PDF_FILE=#{t.name}" }
 end
-file pdf_file => [paperback_format_file]
-file pdf_file => copy_files(from: paperback_template_source_dir, to: paperback_dir)
-file pdf_file => copy_files(from: manuscript_source_dir, to: paperback_manuscript_dir)
-file pdf_file => [paperback_publication_file, paperback_manuscript_listing_file]
+file PDF_FILE => [paperback_format_file]
+file PDF_FILE => copy_files(from: paperback_template_source_dir, to: paperback_dir)
+file PDF_FILE => copy_files(from: manuscript_source_dir, to: paperback_manuscript_dir)
+file PDF_FILE => [paperback_publication_file, paperback_manuscript_listing_file]
 
 file paperback_format_file do |_|
   cd(paperback_format_dir) { sh 'rake' }

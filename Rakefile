@@ -20,14 +20,11 @@ DBP_TMP_DIR = Pathname('/var/tmp/dbp')
 BUILD_DIR = DBP_TMP_DIR + SLUG
 
 cover_source_dir = Pathname('covers')
-ebook_source_dir = Pathname('ebook')
+EBOOK_TEMPLATE_DIR = Pathname('builder/ebooks')
 paperback_source_dir = Pathname('paperback')
 
 manuscript_source_dir = PUBLICATION_SOURCE_DIR / 'manuscript'
 manuscript_listing_source_file = PUBLICATION_SOURCE_DIR / 'manuscript.yaml'
-
-ebook_format_source_dir = ebook_source_dir / 'format'
-ebook_template_source_dir = ebook_source_dir / 'template'
 
 paperback_format_source_dir = paperback_source_dir / 'format'
 paperback_template_source_dir = paperback_source_dir / 'template'
@@ -107,8 +104,7 @@ task mobi: MOBI_FILE
 desc 'Build the PDF file'
 task pdf: PDF_FILE
 
-EBOOK_BUILD_FILES = copy_files(from: ebook_format_source_dir, to: ebook_dir)
-                      .include(copy_files(from: ebook_template_source_dir, to: ebook_dir))
+EBOOK_BUILD_FILES = copy_files(from: EBOOK_TEMPLATE_DIR, to: ebook_dir)
                       .include(translate_tex_to_markdown(from: manuscript_source_dir, to: ebook_manuscript_dir))
                       .include(ebook_cover_file, ebook_publication_file, ebook_manuscript_listing_file)
 

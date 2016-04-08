@@ -20,7 +20,7 @@ DBP_TMP_DIR = Pathname('/var/tmp/dbp')
 BUILD_DIR = DBP_TMP_DIR + SLUG
 
 cover_source_dir = Pathname('covers')
-EBOOK_TEMPLATE_DIR = Pathname('builder/ebooks')
+EPUB_TEMPLATE_DIR = Pathname('builder/epub')
 paperback_source_dir = Pathname('paperback')
 
 manuscript_source_dir = PUBLICATION_SOURCE_DIR / 'manuscript'
@@ -29,8 +29,8 @@ manuscript_listing_source_file = PUBLICATION_SOURCE_DIR / 'manuscript.yaml'
 paperback_format_source_dir = paperback_source_dir / 'format'
 paperback_template_source_dir = paperback_source_dir / 'template'
 
-ebook_dir = BUILD_DIR / 'ebooks'
-directory ebook_dir
+EPUB_BUILD_DIR = BUILD_DIR / 'epub'
+directory EPUB_BUILD_DIR
 
 paperback_dir = BUILD_DIR / 'paperback'
 paperback_format_dir = BUILD_DIR / 'paperback-format'
@@ -68,11 +68,8 @@ task :none
 
 task default: :all
 
-desc 'Build all formats'
-task all: [:ebooks, :pdf]
-
-desc 'Build all ebook formats'
-task ebooks: [:epub, :mobi]
+desc 'Build all formats (pdf, epub, mobi)'
+task all: [:pdf, :mobi]
 
 desc 'Build the epub file'
 task epub: EPUB_FILE
@@ -83,14 +80,14 @@ task mobi: MOBI_FILE
 desc 'Build the PDF file'
 task pdf: PDF_FILE
 
-EBOOK_BUILD_FILES = copy_files(from: EBOOK_TEMPLATE_DIR, to: ebook_dir)
+EPUB_BUILD_FILES = copy_files(from: EPUB_TEMPLATE_DIR, to: EPUB_BUILD_DIR)
 
-file EPUB_FILE => EBOOK_BUILD_FILES do |t|
-  build_ebook(ebook_dir, 'check')
+file EPUB_FILE => EPUB_BUILD_FILES do |t|
+  cd(EPUB_BUILD_DIR) { sh 'rake', "DBP_OUT_DIR=#{OUT_DIR}", "DBP_PUBLICATION_DIR=#{PUBLICATION_SOURCE_DIR}", "DBP_COVER_IMAGE_FILE=#{EBOOK_COVER_IMAGE_FILE}" }
 end
 
-file MOBI_FILE => EPUB_FILE do |t|
-  build_ebook(ebook_dir, 'mobi')
+file MOBI_FILE => [EPUB_FILE] do
+  sh 'kindlegen', EPUB_FILE.to_s
 end
 
 file PDF_FILE do |t|
@@ -123,10 +120,6 @@ file paperback_publication_file => [PUBLICATION_SOURCE_FILE, paperback_dir] do |
     f.puts PUBLICATION['rights'].map{|r| "#{r['material']} \\copyright~#{r['date']} #{r['owner']}"}.join('\\break ')
     f.puts '}'
   end
-end
-
-def build_ebook(dir, task)
-  cd(dir) { sh 'rake', "DBP_OUT_DIR=#{OUT_DIR}", "DBP_PUBLICATION_DIR=#{PUBLICATION_SOURCE_DIR}", "DBP_COVER_IMAGE_FILE=#{EBOOK_COVER_IMAGE_FILE}", task}
 end
 
 CLEAN.include BUILD_DIR

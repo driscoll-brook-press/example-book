@@ -1,19 +1,17 @@
 require 'rake/clean'
+require 'rake/ext/pathname'
 
-format_name = 'dbp'
-
-format_file = "#{format_name}.fmt"
-log_file = "#{format_name}.log"
+PDF_FORMAT_FILE = Pathname(ENV['DBP_PDF_FORMAT_FILE'])
 
 desc 'Build the format file'
 task default: [:format]
 
 desc 'Build the format file'
-task format: [format_file]
+task format: [PDF_FORMAT_FILE]
 
-file format_file => FileList['*.tex'] do
-  sh 'pdftex', '-interaction=batchmode', '-etex', '-enc',  '-ini', format_name
+file PDF_FORMAT_FILE => FileList['*.tex'] do
+  sh 'pdftex', '-interaction=batchmode', '-etex', '-enc',  '-ini', '-jobname', PDF_FORMAT_FILE.pathmap('%X').to_s, 'dbp'
 end
 
-CLEAN << log_file
-CLOBBER << format_file
+CLEAN.include(PDF_FORMAT_FILE.ext('log'))
+CLOBBER.include(PDF_FORMAT_FILE)

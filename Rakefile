@@ -12,12 +12,14 @@ OUT_DIR = Pathname('uploads').expand_path
 EPUB_FILE = (OUT_DIR / SLUG).ext('epub')
 MOBI_FILE = EPUB_FILE.ext('mobi')
 PDF_FILE = EPUB_FILE.ext('pdf')
+
 file EPUB_FILE
 file MOBI_FILE
 file PDF_FILE
 
 DBP_TMP_DIR = Pathname('/var/tmp/dbp')
 BUILD_DIR = DBP_TMP_DIR + SLUG
+PDF_FORMAT_FILE = (BUILD_DIR / 'dbp.fmt').expand_path
 
 BUILDER = Pathname('builder')
 
@@ -29,7 +31,6 @@ manuscript_listing_source_file = PUBLICATION_SOURCE_DIR / 'manuscript.yaml'
 
 PDF_FORMAT_BUILDER = BUILDER / 'pdf-format'
 PDF_FORMAT_BUILD_DIR = BUILD_DIR / 'pdf-format'
-PDF_FORMAT_FILE = PDF_FORMAT_BUILD_DIR / 'dbp.fmt'
 directory PDF_FORMAT_BUILD_DIR
 
 EPUB_BUILDER = BUILDER / 'epub'
@@ -100,7 +101,7 @@ file PDF_FILE => copy_files(from: manuscript_source_dir, to: paperback_manuscrip
 file PDF_FILE => [paperback_publication_file, paperback_manuscript_listing_file]
 
 file PDF_FORMAT_FILE do
-  cd(PDF_FORMAT_BUILD_DIR) { sh 'rake' }
+  cd(PDF_FORMAT_BUILD_DIR) { sh 'rake', "DBP_PDF_FORMAT_FILE=#{PDF_FORMAT_FILE}" }
 end
 file PDF_FORMAT_FILE => copy_files(from: PDF_FORMAT_BUILDER, to: PDF_FORMAT_BUILD_DIR)
 

@@ -41,8 +41,8 @@ ebook_manuscript_listing_file = ebook_data_dir / 'manuscript.yaml'
 ebook_publication_file = ebook_data_dir / 'publication.yaml'
 
 paperback_dir = BUILD_DIR / 'paperback'
-paperback_format_dir = paperback_dir / 'format'
-paperback_format_file = paperback_format_dir / 'dbp.fmt'
+paperback_format_dir = BUILD_DIR / 'paperback-format'
+PDF_FORMAT_FILE = paperback_format_dir / 'dbp.fmt'
 paperback_manuscript_dir = paperback_dir / 'manuscript'
 paperback_manuscript_listing_file = paperback_dir / 'manuscript.tex'
 paperback_publication_file = paperback_dir / 'publication.tex'
@@ -93,7 +93,7 @@ task :none
 task default: :all
 
 desc 'Build all formats'
-task all: [:ebooks, :paperback]
+task all: [:ebooks, :pdf]
 
 desc 'Build all ebook formats'
 task ebooks: [:epub, :mobi]
@@ -104,8 +104,8 @@ task epub: EPUB_FILE
 desc 'Build the mobi file'
 task mobi: MOBI_FILE
 
-desc 'Build the paperback PDF file'
-task paperback: PDF_FILE
+desc 'Build the PDF file'
+task pdf: PDF_FILE
 
 EBOOK_BUILD_FILES = copy_files(from: ebook_format_source_dir, to: ebook_dir)
                       .include(copy_files(from: ebook_template_source_dir, to: ebook_dir))
@@ -135,17 +135,17 @@ file ebook_cover_file => [cover_source_file, ebook_cover_dir] do |t|
 end
 
 file PDF_FILE do |t|
-  cd(paperback_dir) { sh 'rake', "DBP_PDF_FILE=#{t.name}" }
+  cd(paperback_dir) { sh 'rake', "DBP_PDF_FILE=#{t.name}", "DBP_PDF_FORMAT_FILE=#{PDF_FORMAT_FILE}" }
 end
-file PDF_FILE => [paperback_format_file]
+file PDF_FILE => [PDF_FORMAT_FILE]
 file PDF_FILE => copy_files(from: paperback_template_source_dir, to: paperback_dir)
 file PDF_FILE => copy_files(from: manuscript_source_dir, to: paperback_manuscript_dir)
 file PDF_FILE => [paperback_publication_file, paperback_manuscript_listing_file]
 
-file paperback_format_file do |_|
+file PDF_FORMAT_FILE do
   cd(paperback_format_dir) { sh 'rake' }
 end
-file paperback_format_file => copy_files(from: paperback_format_source_dir, to: paperback_format_dir)
+file PDF_FORMAT_FILE => copy_files(from: paperback_format_source_dir, to: paperback_format_dir)
 
 file paperback_manuscript_listing_file => [manuscript_listing_source_file, paperback_dir] do
   File.open(paperback_manuscript_listing_file, 'w') do |f|

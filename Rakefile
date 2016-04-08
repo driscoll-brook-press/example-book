@@ -19,26 +19,27 @@ file PDF_FILE
 DBP_TMP_DIR = Pathname('/var/tmp/dbp')
 BUILD_DIR = DBP_TMP_DIR + SLUG
 
+BUILDER = Pathname('builder')
+
 cover_source_dir = Pathname('covers')
-EPUB_TEMPLATE_DIR = Pathname('builder/epub')
-paperback_source_dir = Pathname('paperback')
+paperback_source_dir = Pathname('paperback/template')
 
 manuscript_source_dir = PUBLICATION_SOURCE_DIR / 'manuscript'
 manuscript_listing_source_file = PUBLICATION_SOURCE_DIR / 'manuscript.yaml'
 
-paperback_format_source_dir = paperback_source_dir / 'format'
-paperback_template_source_dir = paperback_source_dir / 'template'
+PDF_FORMAT_BUILDER = BUILDER / 'pdf-format'
+PDF_FORMAT_BUILD_DIR = BUILD_DIR / 'pdf-format'
+PDF_FORMAT_FILE = PDF_FORMAT_BUILD_DIR / 'dbp.fmt'
+directory PDF_FORMAT_BUILD_DIR
 
+EPUB_BUILDER = BUILDER / 'epub'
 EPUB_BUILD_DIR = BUILD_DIR / 'epub'
 directory EPUB_BUILD_DIR
 
 paperback_dir = BUILD_DIR / 'paperback'
-paperback_format_dir = BUILD_DIR / 'paperback-format'
-PDF_FORMAT_FILE = paperback_format_dir / 'dbp.fmt'
 paperback_manuscript_dir = paperback_dir / 'manuscript'
 paperback_manuscript_listing_file = paperback_dir / 'manuscript.tex'
 paperback_publication_file = paperback_dir / 'publication.tex'
-
 
 directory paperback_dir
 
@@ -80,7 +81,7 @@ task mobi: MOBI_FILE
 desc 'Build the PDF file'
 task pdf: PDF_FILE
 
-EPUB_BUILD_FILES = copy_files(from: EPUB_TEMPLATE_DIR, to: EPUB_BUILD_DIR)
+EPUB_BUILD_FILES = copy_files(from: EPUB_BUILDER, to: EPUB_BUILD_DIR)
 
 file EPUB_FILE => EPUB_BUILD_FILES do |t|
   cd(EPUB_BUILD_DIR) { sh 'rake', "DBP_OUT_DIR=#{OUT_DIR}", "DBP_PUBLICATION_DIR=#{PUBLICATION_SOURCE_DIR}", "DBP_COVER_IMAGE_FILE=#{EBOOK_COVER_IMAGE_FILE}" }
@@ -94,14 +95,14 @@ file PDF_FILE do |t|
   cd(paperback_dir) { sh 'rake', "DBP_PDF_FILE=#{t.name}", "DBP_PDF_FORMAT_FILE=#{PDF_FORMAT_FILE}" }
 end
 file PDF_FILE => [PDF_FORMAT_FILE]
-file PDF_FILE => copy_files(from: paperback_template_source_dir, to: paperback_dir)
+file PDF_FILE => copy_files(from: paperback_source_dir, to: paperback_dir)
 file PDF_FILE => copy_files(from: manuscript_source_dir, to: paperback_manuscript_dir)
 file PDF_FILE => [paperback_publication_file, paperback_manuscript_listing_file]
 
 file PDF_FORMAT_FILE do
-  cd(paperback_format_dir) { sh 'rake' }
+  cd(PDF_FORMAT_BUILD_DIR) { sh 'rake' }
 end
-file PDF_FORMAT_FILE => copy_files(from: paperback_format_source_dir, to: paperback_format_dir)
+file PDF_FORMAT_FILE => copy_files(from: PDF_FORMAT_BUILDER, to: PDF_FORMAT_BUILD_DIR)
 
 file paperback_manuscript_listing_file => [manuscript_listing_source_file, paperback_dir] do
   File.open(paperback_manuscript_listing_file, 'w') do |f|

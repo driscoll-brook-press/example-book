@@ -3,7 +3,7 @@ require 'pathname'
 require 'yaml'
 require 'rake/ext/pathname'
 
-PUBLICATION_SOURCE_DIR = Pathname('publication')
+PUBLICATION_SOURCE_DIR = Pathname('publication').expand_path
 PUBLICATION_SOURCE_FILE = PUBLICATION_SOURCE_DIR / 'publication.yaml'
 PUBLICATION = YAML.load_file(PUBLICATION_SOURCE_FILE)
 SLUG = PUBLICATION['slug']
@@ -30,12 +30,7 @@ paperback_format_source_dir = paperback_source_dir / 'format'
 paperback_template_source_dir = paperback_source_dir / 'template'
 
 ebook_dir = BUILD_DIR / 'ebooks'
-ebook_cover_dir = ebook_dir / 'cover'
-ebook_data_dir = ebook_dir / '_data'
-ebook_manuscript_dir = ebook_dir / 'manuscript'
-ebook_cover_file = ebook_cover_dir / 'cover.jpg'
-ebook_manuscript_listing_file = ebook_data_dir / 'manuscript.yaml'
-ebook_publication_file = ebook_data_dir / 'publication.yaml'
+directory ebook_dir
 
 paperback_dir = BUILD_DIR / 'paperback'
 paperback_format_dir = BUILD_DIR / 'paperback-format'
@@ -44,14 +39,11 @@ paperback_manuscript_dir = paperback_dir / 'manuscript'
 paperback_manuscript_listing_file = paperback_dir / 'manuscript.tex'
 paperback_publication_file = paperback_dir / 'publication.tex'
 
-directory ebook_dir
-directory ebook_data_dir
-directory ebook_cover_dir
 
 directory paperback_dir
 
 manuscript_listing = YAML.load_file(manuscript_listing_source_file)
-cover_source_file = cover_source_dir / "#{SLUG}-cover-ebook.jpg"
+EBOOK_COVER_IMAGE_FILE = Pathname("covers/#{SLUG}-cover-ebook.jpg").expand_path
 
 def files_in(dir)
   FileList.new(dir / '**/*') do |l|
@@ -67,19 +59,6 @@ def copy_files(from:, to:)
     directory target_dir
     file target => [target_dir, source] do |t|
       cp source, target_dir
-    end
-  end
-  targets
-end
-
-def translate_tex_to_markdown(from:, to:)
-  sources = files_in(from)
-  targets = sources.pathmap("%{^#{from}/,#{to}/}X.md")
-  sources.zip(targets).each do |source, target|
-    target_dir = target.pathmap('%d')
-    directory target_dir
-    file target => [target_dir, source] do |t|
-      sh 'tex2md', source, target_dir
     end
   end
   targets
@@ -105,29 +84,13 @@ desc 'Build the PDF file'
 task pdf: PDF_FILE
 
 EBOOK_BUILD_FILES = copy_files(from: EBOOK_TEMPLATE_DIR, to: ebook_dir)
-                      .include(translate_tex_to_markdown(from: manuscript_source_dir, to: ebook_manuscript_dir))
-                      .include(ebook_cover_file, ebook_publication_file, ebook_manuscript_listing_file)
 
 file EPUB_FILE => EBOOK_BUILD_FILES do |t|
-  cd(ebook_dir) { sh 'rake', "DBP_OUT_DIR=#{OUT_DIR}", 'check'}
+  build_ebook(ebook_dir, 'check')
 end
 
 file MOBI_FILE => EPUB_FILE do |t|
-  cd(ebook_dir) { sh 'rake', "DBP_OUT_DIR=#{OUT_DIR}", 'mobi' }
-end
-
-file ebook_manuscript_listing_file => [manuscript_listing_source_file, ebook_data_dir] do
-  File.open(ebook_manuscript_listing_file, 'w') do |f|
-    manuscript_listing.each{|line| f.puts "- manuscript/#{line}.html"}
-  end
-end
-
-file ebook_publication_file => [PUBLICATION_SOURCE_FILE, ebook_data_dir] do |t|
-  cp PUBLICATION_SOURCE_FILE, t.name
-end
-
-file ebook_cover_file => [cover_source_file, ebook_cover_dir] do |t|
-  cp cover_source_file, t.name
+  build_ebook(ebook_dir, 'mobi')
 end
 
 file PDF_FILE do |t|
@@ -160,6 +123,10 @@ file paperback_publication_file => [PUBLICATION_SOURCE_FILE, paperback_dir] do |
     f.puts PUBLICATION['rights'].map{|r| "#{r['material']} \\copyright~#{r['date']} #{r['owner']}"}.join('\\break ')
     f.puts '}'
   end
+end
+
+def build_ebook(dir, task)
+  cd(dir) { sh 'rake', "DBP_OUT_DIR=#{OUT_DIR}", "DBP_PUBLICATION_DIR=#{PUBLICATION_SOURCE_DIR}", "DBP_COVER_IMAGE_FILE=#{EBOOK_COVER_IMAGE_FILE}", task}
 end
 
 CLEAN.include BUILD_DIR

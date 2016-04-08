@@ -4,24 +4,33 @@ require 'yaml'
 require 'rake/ext/pathname'
 require 'rake/ext/string'
 
-FIXED_DIR = Pathname('_fixed')
-FIXED_FILES = FileList[FIXED_DIR / '**/*']
-PUBLICATION = YAML.load_file('_data/publication.yaml')
+PUBLICATION_SOURCE_DIR = Pathname(ENV['DBP_PUBLICATION_DIR'])
+PUBLICATION_SOURCE_FILE = PUBLICATION_SOURCE_DIR / 'publication.yaml'
+
+PUBLICATION = YAML.load_file(PUBLICATION_SOURCE_FILE)
 CONFIG = YAML.load_file('_config.yaml')
 
-SOURCE_FILES = FileList.new('**/*') do |l|
-  l.exclude { |f| File.directory? f }
-  l.exclude /^_out/
-  l.exclude /^_site/
-  l.exclude(CONFIG['exclude'])
-end
+DATA_DIR = Pathname('_data')
+
+MANUSCRIPT_LISTING_FILE = DATA_DIR / 'manuscript.yaml'
+MANUSCRIPT_LISTING_SOURCE_FILE = PUBLICATION_SOURCE_DIR / 'manuscript.yaml'
+
+MANUSCRIPT_DIR = Pathname('manuscript')
+MANUSCRIPT_SOURCE_DIR = PUBLICATION_SOURCE_DIR / 'manuscript'
+TEX_PATH_TO_MARKDOWN_PATH = "%{^#{MANUSCRIPT_SOURCE_DIR}/,#{MANUSCRIPT_DIR}/}X.md"
+MARKDOWN_PATH_TO_TEX_PATH = "%{^#{MANUSCRIPT_DIR}/,#{MANUSCRIPT_SOURCE_DIR}/}X.tex"
+MANUSCRIPT_FILES = FileList[MANUSCRIPT_SOURCE_DIR / '**/*.tex'].pathmap(TEX_PATH_TO_MARKDOWN_PATH)
+
+COPIED_FILES = {
+  'cover/cover.jpg' => ENV['DBP_COVER_IMAGE_FILE'],
+  DATA_DIR / 'publication.yaml' => PUBLICATION_SOURCE_FILE,
+}
 
 BUILD_DIR = Pathname('_site')
 OPF_FILE = BUILD_DIR / 'package.opf'
 
-OUT_DIR = Pathname(ENV['DBP_OUT_DIR'] || Pathname('_out'))
+OUT_DIR = Pathname(ENV['DBP_OUT_DIR'])
 directory OUT_DIR
-
 EPUB_FILE = (OUT_DIR / PUBLICATION['slug']).ext('epub')
 EPUB_CHECK_LOG_FILE = EPUB_FILE.ext('json')
 MOBI_FILE = EPUB_FILE.ext('mobi')
@@ -40,9 +49,9 @@ task mobi: [MOBI_FILE]
 desc 'Check the epub file'
 task check: [EPUB_CHECK_LOG_FILE]
 
-directory EPUB_FILE.dirname
-
-file EPUB_FILE => [OPF_FILE, EPUB_FILE.dirname] + FIXED_FILES do |t|
+FIXED_DIR = Pathname('_fixed')
+FIXED_FILES = FileList[FIXED_DIR / '**/*']
+file EPUB_FILE => [OPF_FILE, OUT_DIR] + FIXED_FILES do |t|
   rm_f t.name
   cd(FIXED_DIR) do
     sh 'zip', t.name, '-rX0', 'mimetype'
@@ -59,10 +68,39 @@ file EPUB_CHECK_LOG_FILE => [EPUB_FILE] do |t|
   sh 'epubcheck', EPUB_FILE.to_s, '--json', t.name
 end
 
+SOURCE_FILES = FileList.new('**/*') do |l|
+  l.exclude { |f| File.directory? f }
+  l.exclude /^_out/
+  l.exclude /^_site/
+  l.exclude(CONFIG['exclude'])
+end
+
 # This actually builds all of the content files,
 # not only the OPF file.
-file OPF_FILE => SOURCE_FILES do
+file OPF_FILE do
   sh 'jekyll', 'build'
+end
+file OPF_FILE => SOURCE_FILES
+file OPF_FILE => MANUSCRIPT_FILES
+file OPF_FILE => COPIED_FILES.keys
+
+file MANUSCRIPT_LISTING_FILE => [MANUSCRIPT_LISTING_SOURCE_FILE] do |t|
+  listing = YAML.load_file(t.source)
+  File.open(t.name, 'w') do |f|
+    listing.each{|line| f.puts "- manuscript/#{line}.html"}
+  end
+end
+
+COPIED_FILES.each do |target, source|
+  file target => source do |t|
+    cp t.source, t.name
+  end
+end
+
+rule '.md' => proc { |f| f.pathmap(MARKDOWN_PATH_TO_TEX_PATH) } do |t|
+  dir = t.name.pathmap('%d')
+  mkpath dir
+  sh 'tex2md', t.source, dir
 end
 
 CLEAN.include BUILD_DIR

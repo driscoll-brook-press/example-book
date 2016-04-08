@@ -3,6 +3,9 @@ require 'pathname'
 
 slug = 'book'
 
+OUT_DIR = Pathname(ENV['DBP_OUT_DIR'] || Pathname('.')).to_s
+directory OUT_DIR
+
 pdf_file = "#{slug}.pdf"
 log_file = "#{slug}.log"
 fmt_name = 'format/dbp'
@@ -14,8 +17,8 @@ task default: [:pdf]
 desc 'Typeset the book as a PDF file'
 task pdf: [pdf_file]
 
-file pdf_file do
-  sh 'pdftex', '-interaction=batchmode', '-fmt', fmt_name, slug
+file pdf_file => [OUT_DIR] do
+  sh 'pdftex', '-interaction=batchmode', '-fmt', fmt_name, '-output-directory', OUT_DIR, slug
 end
 file pdf_file => FileList['*.tex', 'author/*.tex', 'manuscript/*.tex', 'preview/*.tex']
 file pdf_file => [fmt_file]

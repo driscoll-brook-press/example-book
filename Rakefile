@@ -135,7 +135,7 @@ file ebook_cover_file => [cover_source_file, ebook_cover_dir] do |t|
 end
 
 file pdf_file do
-  cd(paperback_dir) { sh 'rake' }
+  cd(paperback_dir) { sh 'rake', "DBP_OUT_DIR=#{OUT_DIR}" }
 end
 file pdf_file => [paperback_format_file]
 file pdf_file => copy_files(from: paperback_template_source_dir, to: paperback_dir)

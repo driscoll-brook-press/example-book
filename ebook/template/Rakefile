@@ -2,6 +2,7 @@ require 'rake/clean'
 require 'pathname'
 require 'yaml'
 require 'rake/ext/pathname'
+require 'rake/ext/string'
 
 FIXED_DIR = Pathname('_fixed')
 FIXED_FILES = FileList[FIXED_DIR / '**/*']
@@ -18,12 +19,12 @@ end
 BUILD_DIR = Pathname('_site')
 OPF_FILE = BUILD_DIR / 'package.opf'
 
-OUT_DIR = Pathname('_out')
-EPUB_FILE = Pathname(ENV['DBP_EPUB_FILE']) || (OUT_DIR / PUBLICATION['slug']).ext('epub').expand_path.to_s
+OUT_DIR = Pathname(ENV['DBP_OUT_DIR'] || Pathname('_out'))
+directory OUT_DIR
+
+EPUB_FILE = (OUT_DIR / PUBLICATION['slug']).ext('epub')
 EPUB_CHECK_LOG_FILE = EPUB_FILE.ext('json')
 MOBI_FILE = EPUB_FILE.ext('mobi')
-
-directory OUT_DIR
 
 task default: [:all]
 
@@ -51,7 +52,7 @@ file EPUB_FILE => [OPF_FILE, EPUB_FILE.dirname] + FIXED_FILES do |t|
 end
 
 file MOBI_FILE => [EPUB_FILE] do
-  sh 'kindlegen', EPUB_FILE
+  sh 'kindlegen', EPUB_FILE.to_s
 end
 
 file EPUB_CHECK_LOG_FILE => [EPUB_FILE] do |t|
@@ -65,4 +66,3 @@ file OPF_FILE => SOURCE_FILES do
 end
 
 CLEAN.include BUILD_DIR
-CLOBBER.include OUT_DIR

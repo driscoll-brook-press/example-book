@@ -11,8 +11,8 @@ SLUG = PUBLICATION['slug']
 OUT_DIR = Pathname('uploads').expand_path
 EPUB_FILE = (OUT_DIR / SLUG).ext('epub')
 MOBI_FILE = EPUB_FILE.ext('mobi')
-file MOBI_FILE
 file EPUB_FILE
+file MOBI_FILE
 
 DBP_TMP_DIR = Pathname('/var/tmp/dbp')
 BUILD_DIR = DBP_TMP_DIR + SLUG
@@ -113,11 +113,11 @@ EBOOK_BUILD_FILES = copy_files(from: ebook_format_source_dir, to: ebook_dir)
                       .include(ebook_cover_file, ebook_publication_file, ebook_manuscript_listing_file)
 
 file EPUB_FILE => EBOOK_BUILD_FILES do |t|
-  cd(ebook_dir) { sh 'rake', "DBP_EPUB_FILE=#{t.name}", 'check'}
+  cd(ebook_dir) { sh 'rake', "DBP_OUT_DIR=#{OUT_DIR}", 'check'}
 end
 
 file MOBI_FILE => EPUB_FILE do |t|
-  cd(ebook_dir) { sh 'rake', "DBP_MOBI_FILE=#{t.name}", 'mobi' }
+  cd(ebook_dir) { sh 'rake', "DBP_OUT_DIR=#{OUT_DIR}", 'mobi' }
 end
 
 file ebook_manuscript_listing_file => [manuscript_listing_source_file, ebook_data_dir] do
@@ -158,13 +158,13 @@ file paperback_publication_file => [PUBLICATION_SOURCE_FILE, paperback_dir] do |
     f.puts "\\title={#{PUBLICATION['title']}}"
     f.puts "\\author={#{PUBLICATION['author']['name']}}"
     f.puts '\\isbns={'
-    f.puts publication['isbn'].map{|k,v| "ISBN: #{v} (#{k})"}.join('\\break ')
+    f.puts PUBLICATION['isbn'].map{|k,v| "ISBN: #{v} (#{k})"}.join('\\break ')
     f.puts '}'
     f.puts '\\rights={'
-    f.puts publication['rights'].map{|r| "#{r['material']} \\copyright~#{r['date']} #{r['owner']}"}.join('\\break ')
+    f.puts PUBLICATION['rights'].map{|r| "#{r['material']} \\copyright~#{r['date']} #{r['owner']}"}.join('\\break ')
     f.puts '}'
   end
 end
 
 CLEAN.include BUILD_DIR
-CLOBBER.include EPUB_FILE, MOBI_FILE, pdf_file
+CLOBBER.include OUT_DIR

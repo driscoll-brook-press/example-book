@@ -8,37 +8,42 @@ UTILS = TEMPLATE_DIR / 'utils'
 
 require UTILS
 
-PROJECT_DIR = Pathname(ENV.fetch('DBP_PROJECT_DIR', Pathname.pwd)).expand_path
-PUBLICATION_DIR = PROJECT_DIR / 'publication'
+BOOK_DIR = Pathname(ENV.fetch('DBP_BOOK_DIR', Pathname.pwd)).expand_path
+PUBLICATION_DIR = BOOK_DIR / 'publication'
 PUBLICATION_DATA_FILE = PUBLICATION_DIR / 'publication.yaml'
+
 PUBLICATION = YAML.load_file(PUBLICATION_DATA_FILE)
 SLUG = PUBLICATION['slug']
-
-MANUSCRIPT_DIR = PUBLICATION_DIR / 'manuscript'
-MANUSCRIPT_FILES = FileList[MANUSCRIPT_DIR / '**/*']
 
 DBP_BUILD_DIR = Pathname('/var/tmp/dbp')
 BOOK_BUILD_DIR = DBP_BUILD_DIR + SLUG
 
-OUT_DIR = PROJECT_DIR / 'uploads'
+OUT_DIR = BOOK_DIR / 'uploads'
 
-EPUB_TEMPLATE_DIR = TEMPLATE_DIR / 'epub'
-EPUB_BUILD_DIR = BOOK_BUILD_DIR / EPUB_TEMPLATE_DIR.basename
-EPUB_TEMPLATE_FILES = copies(from: EPUB_TEMPLATE_DIR, to: EPUB_BUILD_DIR)
-EPUB_PUBLICATION_FILES = FileList[PUBLICATION_DIR / 'epub/**/*']
-EPUB_FILE = (OUT_DIR / SLUG).ext('epub')
-
-file EPUB_FILE => EPUB_TEMPLATE_FILES
-file EPUB_FILE => EPUB_PUBLICATION_FILES
-file EPUB_FILE => MANUSCRIPT_FILES
-file EPUB_FILE => PUBLICATION_DATA_FILE
-file EPUB_FILE => EPUB_TEMPLATE_FILES + MANUSCRIPT_FILES + EPUB_PUBLICATION_FILES + [PUBLICATION_DATA_FILE] do |t|
-  cd(EPUB_BUILD_DIR) { rake "DBP_PUBLICATION_DIR=#{PUBLICATION_DIR}", "DBP_EPUB_FILE=#{t.name}" }
+def output_file(medium)
+  (OUT_DIR / SLUG).ext(medium.to_s)
 end
 
-MOBI_FILE = EPUB_FILE.ext('mobi')
-file MOBI_FILE => [EPUB_FILE] do |t|
-  sh 'kindlegen', t.source
+def produce(medium:, deps: [], env: {})
+  medium = medium.to_s
+  template_dir = TEMPLATE_DIR / medium
+  build_dir = BOOK_BUILD_DIR / template_dir.basename
+  output_file = output_file(medium)
+  rake_env = env.merge(DBP_PUBLICATION_DIR: PUBLICATION_DIR, DBP_OUTPUT_FILE: output_file)
+
+  file output_file => copies(from: template_dir, to: build_dir)
+  file output_file => FileList[PUBLICATION_DIR / medium / '**/*']
+  file output_file => FileList[PUBLICATION_DIR / 'manuscript' / '**/*']
+  file output_file => PUBLICATION_DATA_FILE
+  file output_file => deps
+
+  desc "Build the #{medium} file"
+  task medium do |t|
+    cd(build_dir) { rake rake_env }
+  end
+
+  task medium => output_file
+  task all: medium
 end
 
 PDF_FORMAT_TEMPLATE_DIR = TEMPLATE_DIR / 'pdf-format'
@@ -48,39 +53,28 @@ PDF_FORMAT_FILE = (BOOK_BUILD_DIR / 'dbp.fmt').expand_path
 
 directory PDF_FORMAT_BUILD_DIR
 file PDF_FORMAT_FILE => PDF_FORMAT_TEMPLATE_FILES + [PDF_FORMAT_BUILD_DIR] do |t|
-  cd(PDF_FORMAT_BUILD_DIR) { rake "DBP_PDF_FORMAT_FILE=#{t.name}" }
+  cd(PDF_FORMAT_BUILD_DIR) { rake DBP_PDF_FORMAT_FILE: t.name }
 end
 
-PDF_TEMPLATE_DIR = TEMPLATE_DIR / 'pdf'
-PDF_BUILD_DIR = BOOK_BUILD_DIR / PDF_TEMPLATE_DIR.basename
-PDF_TEMPLATE_FILES = copies(from: PDF_TEMPLATE_DIR, to: PDF_BUILD_DIR)
-PDF_PUBLICATION_FILES = FileList[PUBLICATION_DIR / 'pdf/**/*']
-PDF_FILE = EPUB_FILE.ext('pdf')
+produce(medium: :pdf, deps: PDF_FORMAT_FILE, env: { DBP_PDF_FORMAT_FILE: PDF_FORMAT_FILE })
+produce(medium: :epub)
 
-file PDF_FILE => PDF_TEMPLATE_FILES
-file PDF_FILE => PDF_PUBLICATION_FILES
-file PDF_FILE => MANUSCRIPT_FILES
-file PDF_FILE => PUBLICATION_DATA_FILE
-file PDF_FILE => PDF_FORMAT_FILE do |t|
-  cd(PDF_BUILD_DIR) { rake "DBP_PUBLICATION_DIR=#{PUBLICATION_DIR}", "DBP_PDF_FORMAT_FILE=#{PDF_FORMAT_FILE}", "DBP_PDF_FILE=#{t.name}" }
+MOBI_FILE = output_file(:mobi)
+file MOBI_FILE => output_file(:epub) do |t|
+  sh 'kindlegen', t.source
 end
 
 task default: :all
 
-desc 'Build all formats (pdf, epub, mobi)'
-task all: [:pdf, :mobi]
-
-desc 'Build the epub file'
-task epub: EPUB_FILE
+desc 'Build all formats'
+task all: [:mobi]
 
 desc 'Build the mobi file'
 task mobi: MOBI_FILE
 
-desc 'Build the PDF file'
-task pdf: PDF_FILE
-
-def rake(*args)
-  sh 'rake', '-r', UTILS.to_s, *args
+def rake(env = {})
+  env_args = env.map { |k,v| "#{k}=#{v}" }
+  sh 'rake', '-r', UTILS.to_s, *env_args
 end
 
 CLEAN.include BOOK_BUILD_DIR

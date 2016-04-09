@@ -17,19 +17,6 @@ MANUSCRIPT_LISTING_SOURCE_FILE = MANUSCRIPT_SOURCE_DIR / 'listing.yaml'
 MANUSCRIPT_DIR = Pathname('manuscript')
 MANUSCRIPT_LISTING_FILE = Pathname('manuscript.tex')
 
-def copies(from:, to:)
-  sources = FileList[from / '**/*'].exclude { |f| Pathname(f).directory? }
-  targets = sources.pathmap("%{^#{from}/,#{to}/}p")
-  targets.zip(sources).each do |target, source|
-    target_dir = target.pathmap('%d')
-    directory target_dir
-    file target => [source, target_dir] do |t|
-      cp t.source, target_dir
-    end
-  end
-  targets
-end
-
 file MANUSCRIPT_LISTING_FILE => [MANUSCRIPT_LISTING_SOURCE_FILE] do |t|
   File.open(t.name, 'w') do |f|
     YAML.load_file(t.source).each{|line| f.puts "\\input manuscript/#{line}"}

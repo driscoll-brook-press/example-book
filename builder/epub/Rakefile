@@ -23,19 +23,6 @@ file PUBLICATION_DATA_FILE => PUBLICATION_SOURCE_FILE do |t|
   cp t.source, t.name
 end
 
-def copies(from:, to:)
-  sources = FileList[from / '**/*'].exclude { |f| Pathname(f).directory? }
-  targets = sources.pathmap("%{^#{from}/,#{to}/}p")
-  targets.zip(sources).each do |target, source|
-    target_dir = target.pathmap('%d')
-    directory target_dir
-    file target => [source, target_dir] do |t|
-      cp t.source, target_dir
-    end
-  end
-  targets
-end
-
 MANUSCRIPT_DIR = Pathname('manuscript')
 TEX_PATH_TO_MARKDOWN_PATH = "%{^#{MANUSCRIPT_SOURCE_DIR}/,#{MANUSCRIPT_DIR}/}X.md"
 MARKDOWN_PATH_TO_TEX_PATH = "%{^#{MANUSCRIPT_DIR}/,#{MANUSCRIPT_SOURCE_DIR}/}X.tex"

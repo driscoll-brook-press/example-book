@@ -6,59 +6,35 @@ require 'rake/ext/string'
 
 PUBLICATION_SOURCE_DIR = Pathname(ENV['DBP_PUBLICATION_DIR'])
 PUBLICATION_SOURCE_FILE = PUBLICATION_SOURCE_DIR / 'publication.yaml'
+MANUSCRIPT_SOURCE_DIR = PUBLICATION_SOURCE_DIR / 'manuscript'
+MANUSCRIPT_LISTING_SOURCE_FILE = PUBLICATION_SOURCE_DIR / 'manuscript.yaml'
+
+DATA_DIR = Pathname('_data')
+FIXED_DIR = Pathname('_fixed')
+FIXED_FILES = FileList[FIXED_DIR / '**/*']
+MANUSCRIPT_LISTING_FILE = DATA_DIR / 'manuscript.yaml'
+MANUSCRIPT_DIR = Pathname('manuscript')
 
 PUBLICATION = YAML.load_file(PUBLICATION_SOURCE_FILE)
 CONFIG = YAML.load_file('_config.yaml')
-
-DATA_DIR = Pathname('_data')
-
-MANUSCRIPT_LISTING_FILE = DATA_DIR / 'manuscript.yaml'
-MANUSCRIPT_LISTING_SOURCE_FILE = PUBLICATION_SOURCE_DIR / 'manuscript.yaml'
-
-MANUSCRIPT_DIR = Pathname('manuscript')
-MANUSCRIPT_SOURCE_DIR = PUBLICATION_SOURCE_DIR / 'manuscript'
-TEX_PATH_TO_MARKDOWN_PATH = "%{^#{MANUSCRIPT_SOURCE_DIR}/,#{MANUSCRIPT_DIR}/}X.md"
-MARKDOWN_PATH_TO_TEX_PATH = "%{^#{MANUSCRIPT_DIR}/,#{MANUSCRIPT_SOURCE_DIR}/}X.tex"
-MANUSCRIPT_FILES = FileList[MANUSCRIPT_SOURCE_DIR / '**/*.tex'].pathmap(TEX_PATH_TO_MARKDOWN_PATH)
 
 COPIED_FILES = {
   'cover/cover.jpg' => ENV['DBP_COVER_IMAGE_FILE'],
   DATA_DIR / 'publication.yaml' => PUBLICATION_SOURCE_FILE,
 }
 
+COPIED_FILES.each do |target, source|
+  file target => source do |t|
+    cp t.source, t.name
+  end
+end
+
+TEX_PATH_TO_MARKDOWN_PATH = "%{^#{MANUSCRIPT_SOURCE_DIR}/,#{MANUSCRIPT_DIR}/}X.md"
+MARKDOWN_PATH_TO_TEX_PATH = "%{^#{MANUSCRIPT_DIR}/,#{MANUSCRIPT_SOURCE_DIR}/}X.tex"
+MANUSCRIPT_FILES = FileList[MANUSCRIPT_SOURCE_DIR / '**/*.tex'].pathmap(TEX_PATH_TO_MARKDOWN_PATH)
+
 BUILD_DIR = Pathname('_site')
 OPF_FILE = BUILD_DIR / 'package.opf'
-
-OUT_DIR = Pathname(ENV['DBP_OUT_DIR'])
-directory OUT_DIR
-EPUB_FILE = (OUT_DIR / PUBLICATION['slug']).ext('epub')
-EPUB_CHECK_LOG_FILE = EPUB_FILE.ext('json')
-
-task default: [:all]
-
-desc 'Build and check the epub file (default)'
-task all: [:check]
-
-desc 'Build the epub file'
-task epub: [EPUB_FILE]
-
-desc 'Check the epub file'
-task check: [EPUB_CHECK_LOG_FILE]
-
-FIXED_DIR = Pathname('_fixed')
-FIXED_FILES = FileList[FIXED_DIR / '**/*']
-file EPUB_FILE => [OPF_FILE, OUT_DIR] + FIXED_FILES do |t|
-  rm_f t.name
-  cd(FIXED_DIR) do
-    sh 'zip', t.name, '-rX0', 'mimetype'
-    sh 'zip', t.name, '-rDX9', '.', '-x', 'mimetype'
-  end
-  cd(BUILD_DIR) { sh 'zip', t.name, '-rDX9', '.' }
-end
-
-file EPUB_CHECK_LOG_FILE => [EPUB_FILE] do |t|
-  sh 'epubcheck', EPUB_FILE.to_s, '--json', t.name
-end
 
 SOURCE_FILES = FileList.new('**/*') do |l|
   l.exclude { |f| File.directory? f }
@@ -69,12 +45,21 @@ end
 
 # This actually builds all of the content files,
 # not only the OPF file.
-file OPF_FILE do
+file OPF_FILE => SOURCE_FILES + MANUSCRIPT_FILES + COPIED_FILES.keys do
   sh 'jekyll', 'build'
 end
-file OPF_FILE => SOURCE_FILES
-file OPF_FILE => MANUSCRIPT_FILES
-file OPF_FILE => COPIED_FILES.keys
+
+EPUB_FILE = Pathname(ENV['DBP_EPUB_FILE'])
+OUT_DIR = EPUB_FILE.dirname
+directory OUT_DIR
+file EPUB_FILE => [OPF_FILE, OUT_DIR] + FIXED_FILES do |t|
+  rm_f t.name
+  cd(FIXED_DIR) do
+    sh 'zip', t.name, '-rX0', 'mimetype'
+    sh 'zip', t.name, '-rDX9', '.', '-x', 'mimetype'
+  end
+  cd(BUILD_DIR) { sh 'zip', t.name, '-rDX9', '.' }
+end
 
 file MANUSCRIPT_LISTING_FILE => [MANUSCRIPT_LISTING_SOURCE_FILE] do |t|
   listing = YAML.load_file(t.source)
@@ -83,16 +68,27 @@ file MANUSCRIPT_LISTING_FILE => [MANUSCRIPT_LISTING_SOURCE_FILE] do |t|
   end
 end
 
-COPIED_FILES.each do |target, source|
-  file target => source do |t|
-    cp t.source, t.name
-  end
+EPUB_CHECK_REPORT = EPUB_FILE.ext('json')
+file EPUB_CHECK_REPORT => [EPUB_FILE] do |t|
+  sh 'epubcheck', EPUB_FILE.to_s, '--json', t.name
 end
+
 
 rule '.md' => proc { |f| f.pathmap(MARKDOWN_PATH_TO_TEX_PATH) } do |t|
   dir = t.name.pathmap('%d')
   mkpath dir
   sh 'tex2md', t.source, dir
 end
+
+task default: [:all]
+
+desc 'Build and check the epub file (default)'
+task all: [:check]
+
+desc 'Build the epub file'
+task epub: [EPUB_FILE]
+
+desc 'Check the epub file'
+task check: [EPUB_CHECK_REPORT]
 
 CLEAN.include BUILD_DIR

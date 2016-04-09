@@ -3,70 +3,57 @@ require 'pathname'
 require 'yaml'
 require 'rake/ext/pathname'
 
-PUBLICATION_SOURCE_DIR = Pathname('publication').expand_path
-PUBLICATION_SOURCE_FILE = PUBLICATION_SOURCE_DIR / 'publication.yaml'
-PUBLICATION = YAML.load_file(PUBLICATION_SOURCE_FILE)
+PUBLICATION_DIR = Pathname('publication').expand_path
+PUBLICATION_FILES = FileList[PUBLICATION_DIR / '**/*']
+PUBLICATION_DATA_FILE = PUBLICATION_DIR / 'publication.yaml'
+PUBLICATION = YAML.load_file(PUBLICATION_DATA_FILE)
 SLUG = PUBLICATION['slug']
 
+TEMPLATE_DIR = Pathname('builder')
+
+DBP_BUILD_DIR = Pathname('/var/tmp/dbp')
+BOOK_BUILD_DIR = DBP_BUILD_DIR + SLUG
+
 OUT_DIR = Pathname('uploads').expand_path
+
+EPUB_TEMPLATE_DIR = TEMPLATE_DIR / 'epub'
+EPUB_TEMPLATE_FILES = FileList[EPUB_TEMPLATE_DIR / '**/*']
+EPUB_COVER_IMAGE_FILE = Pathname("covers/#{SLUG}-cover-ebook.jpg").expand_path
+EPUB_BUILD_DIR = BOOK_BUILD_DIR / EPUB_TEMPLATE_DIR.basename
 EPUB_FILE = (OUT_DIR / SLUG).ext('epub')
+
+directory EPUB_BUILD_DIR
+file EPUB_FILE => EPUB_TEMPLATE_FILES + PUBLICATION_FILES + [EPUB_BUILD_DIR, EPUB_COVER_IMAGE_FILE] do |t|
+  cp_r EPUB_TEMPLATE_DIR, BOOK_BUILD_DIR
+  cd(EPUB_BUILD_DIR) { sh 'rake', "DBP_PUBLICATION_DIR=#{PUBLICATION_DIR}", "DBP_COVER_IMAGE_FILE=#{EPUB_COVER_IMAGE_FILE}", "DBP_EPUB_FILE=#{t.name}" }
+end
+
 MOBI_FILE = EPUB_FILE.ext('mobi')
+file MOBI_FILE => [EPUB_FILE] do |t|
+  sh 'kindlegen', t.source
+end
+
+PDF_FORMAT_TEMPLATE_DIR = TEMPLATE_DIR / 'pdf-format'
+PDF_FORMAT_TEMPLATE_FILES = FileList[PDF_FORMAT_TEMPLATE_DIR / '**/*']
+PDF_FORMAT_BUILD_DIR = BOOK_BUILD_DIR / PDF_FORMAT_TEMPLATE_DIR.basename
+PDF_FORMAT_FILE = (BOOK_BUILD_DIR / 'dbp.fmt').expand_path
+
+directory PDF_FORMAT_BUILD_DIR
+file PDF_FORMAT_FILE => PDF_FORMAT_TEMPLATE_FILES + [PDF_FORMAT_BUILD_DIR] do |t|
+  cp_r PDF_FORMAT_TEMPLATE_DIR, BOOK_BUILD_DIR
+  cd(PDF_FORMAT_BUILD_DIR) { sh 'rake', "DBP_PDF_FORMAT_FILE=#{t.name}" }
+end
+
+PDF_TEMPLATE_DIR = TEMPLATE_DIR / 'pdf'
+PDF_TEMPLATE_FILES = FileList[PDF_TEMPLATE_DIR / '**/*']
+PDF_BUILD_DIR = BOOK_BUILD_DIR / PDF_TEMPLATE_DIR.basename
 PDF_FILE = EPUB_FILE.ext('pdf')
 
-file EPUB_FILE
-file MOBI_FILE
-file PDF_FILE
-
-DBP_TMP_DIR = Pathname('/var/tmp/dbp')
-BUILD_DIR = DBP_TMP_DIR + SLUG
-PDF_FORMAT_FILE = (BUILD_DIR / 'dbp.fmt').expand_path
-
-BUILDER = Pathname('builder')
-
-cover_source_dir = Pathname('covers')
-PDF_TEMPLATE_DIR = BUILDER / 'pdf'
-
-manuscript_source_dir = PUBLICATION_SOURCE_DIR / 'manuscript'
-manuscript_listing_source_file = PUBLICATION_SOURCE_DIR / 'manuscript.yaml'
-
-PDF_FORMAT_BUILDER = BUILDER / 'pdf-format'
-PDF_FORMAT_BUILD_DIR = BUILD_DIR / 'pdf-format'
-directory PDF_FORMAT_BUILD_DIR
-
-EPUB_BUILDER = BUILDER / 'epub'
-EPUB_BUILD_DIR = BUILD_DIR / 'epub'
-directory EPUB_BUILD_DIR
-
-PDF_BUILD_DIR = BUILD_DIR / 'pdf'
-paperback_manuscript_dir = PDF_BUILD_DIR / 'manuscript'
-paperback_manuscript_listing_file = PDF_BUILD_DIR / 'manuscript.tex'
-paperback_publication_file = PDF_BUILD_DIR / 'publication.tex'
-
 directory PDF_BUILD_DIR
-
-manuscript_listing = YAML.load_file(manuscript_listing_source_file)
-EBOOK_COVER_IMAGE_FILE = Pathname("covers/#{SLUG}-cover-ebook.jpg").expand_path
-
-def files_in(dir)
-  FileList.new(dir / '**/*') do |l|
-    l.exclude { |f| File.directory? f }
-  end
+file PDF_FILE => PDF_TEMPLATE_FILES + PUBLICATION_FILES + [PDF_FORMAT_FILE, PDF_BUILD_DIR] do |t|
+  cp_r PDF_TEMPLATE_DIR, BOOK_BUILD_DIR
+  cd(PDF_BUILD_DIR) { sh 'rake', "DBP_PUBLICATION_DIR=#{PUBLICATION_DIR}", "DBP_PDF_FORMAT_FILE=#{PDF_FORMAT_FILE}", "DBP_PDF_FILE=#{t.name}" }
 end
-
-def copy_files(from:, to:)
-  sources = files_in(from)
-  targets = sources.pathmap("%{^#{from}/,#{to}/}p")
-  sources.zip(targets).each do |source, target|
-    target_dir = target.pathmap('%d')
-    directory target_dir
-    file target => [target_dir, source] do |t|
-      cp source, target_dir
-    end
-  end
-  targets
-end
-
-task :none
 
 task default: :all
 
@@ -82,47 +69,5 @@ task mobi: MOBI_FILE
 desc 'Build the PDF file'
 task pdf: PDF_FILE
 
-EPUB_BUILD_FILES = copy_files(from: EPUB_BUILDER, to: EPUB_BUILD_DIR)
-
-file EPUB_FILE => EPUB_BUILD_FILES do |t|
-  cd(EPUB_BUILD_DIR) { sh 'rake', "DBP_OUT_DIR=#{OUT_DIR}", "DBP_PUBLICATION_DIR=#{PUBLICATION_SOURCE_DIR}", "DBP_COVER_IMAGE_FILE=#{EBOOK_COVER_IMAGE_FILE}" }
-end
-
-file MOBI_FILE => [EPUB_FILE] do
-  sh 'kindlegen', EPUB_FILE.to_s
-end
-
-file PDF_FILE do |t|
-  cd(PDF_BUILD_DIR) { sh 'rake', "DBP_PDF_FILE=#{t.name}", "DBP_PDF_FORMAT_FILE=#{PDF_FORMAT_FILE}" }
-end
-file PDF_FILE => [PDF_FORMAT_FILE]
-file PDF_FILE => copy_files(from: PDF_TEMPLATE_DIR, to: PDF_BUILD_DIR)
-file PDF_FILE => copy_files(from: manuscript_source_dir, to: paperback_manuscript_dir)
-file PDF_FILE => [paperback_publication_file, paperback_manuscript_listing_file]
-
-file PDF_FORMAT_FILE do
-  cd(PDF_FORMAT_BUILD_DIR) { sh 'rake', "DBP_PDF_FORMAT_FILE=#{PDF_FORMAT_FILE}" }
-end
-file PDF_FORMAT_FILE => copy_files(from: PDF_FORMAT_BUILDER, to: PDF_FORMAT_BUILD_DIR)
-
-file paperback_manuscript_listing_file => [manuscript_listing_source_file, PDF_BUILD_DIR] do
-  File.open(paperback_manuscript_listing_file, 'w') do |f|
-    manuscript_listing.each{|line| f.puts "\\input manuscript/#{line}"}
-  end
-end
-
-file paperback_publication_file => [PUBLICATION_SOURCE_FILE, PDF_BUILD_DIR] do |t|
-  File.open(t.name, 'w') do |f|
-    f.puts "\\title={#{PUBLICATION['title']}}"
-    f.puts "\\author={#{PUBLICATION['author']['name']}}"
-    f.puts '\\isbns={'
-    f.puts PUBLICATION['isbn'].map{|k,v| "ISBN: #{v} (#{k})"}.join('\\break ')
-    f.puts '}'
-    f.puts '\\rights={'
-    f.puts PUBLICATION['rights'].map{|r| "#{r['material']} \\copyright~#{r['date']} #{r['owner']}"}.join('\\break ')
-    f.puts '}'
-  end
-end
-
-CLEAN.include BUILD_DIR
+CLEAN.include BOOK_BUILD_DIR
 CLOBBER.include OUT_DIR

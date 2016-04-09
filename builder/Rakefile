@@ -3,8 +3,12 @@ require 'pathname'
 require 'yaml'
 require 'rake/ext/pathname'
 
+TEMPLATE_DIR = Pathname(__FILE__).dirname
+UTILS = TEMPLATE_DIR / 'utils'
+
+require UTILS
+
 PROJECT_DIR = Pathname(ENV.fetch('DBP_PROJECT_DIR', Pathname.pwd)).expand_path
-puts "Project dir: #{PROJECT_DIR}"
 PUBLICATION_DIR = PROJECT_DIR / 'publication'
 PUBLICATION_DATA_FILE = PUBLICATION_DIR / 'publication.yaml'
 PUBLICATION = YAML.load_file(PUBLICATION_DATA_FILE)
@@ -13,25 +17,10 @@ SLUG = PUBLICATION['slug']
 MANUSCRIPT_DIR = PUBLICATION_DIR / 'manuscript'
 MANUSCRIPT_FILES = FileList[MANUSCRIPT_DIR / '**/*']
 
-TEMPLATE_DIR = Pathname(__FILE__).dirname
-
 DBP_BUILD_DIR = Pathname('/var/tmp/dbp')
 BOOK_BUILD_DIR = DBP_BUILD_DIR + SLUG
 
 OUT_DIR = PROJECT_DIR / 'uploads'
-
-def copies(from:, to:)
-  sources = FileList[from / '**/*'].exclude { |f| Pathname(f).directory? }
-  targets = sources.pathmap("%{^#{from}/,#{to}/}p")
-  targets.zip(sources).each do |target, source|
-    target_dir = target.pathmap('%d')
-    directory target_dir
-    file target => [source, target_dir] do |t|
-      cp t.source, target_dir
-    end
-  end
-  targets
-end
 
 EPUB_TEMPLATE_DIR = TEMPLATE_DIR / 'epub'
 EPUB_BUILD_DIR = BOOK_BUILD_DIR / EPUB_TEMPLATE_DIR.basename
@@ -44,7 +33,7 @@ file EPUB_FILE => EPUB_PUBLICATION_FILES
 file EPUB_FILE => MANUSCRIPT_FILES
 file EPUB_FILE => PUBLICATION_DATA_FILE
 file EPUB_FILE => EPUB_TEMPLATE_FILES + MANUSCRIPT_FILES + EPUB_PUBLICATION_FILES + [PUBLICATION_DATA_FILE] do |t|
-  cd(EPUB_BUILD_DIR) { sh 'rake', "DBP_PUBLICATION_DIR=#{PUBLICATION_DIR}", "DBP_EPUB_FILE=#{t.name}" }
+  cd(EPUB_BUILD_DIR) { rake "DBP_PUBLICATION_DIR=#{PUBLICATION_DIR}", "DBP_EPUB_FILE=#{t.name}" }
 end
 
 MOBI_FILE = EPUB_FILE.ext('mobi')
@@ -59,7 +48,7 @@ PDF_FORMAT_FILE = (BOOK_BUILD_DIR / 'dbp.fmt').expand_path
 
 directory PDF_FORMAT_BUILD_DIR
 file PDF_FORMAT_FILE => PDF_FORMAT_TEMPLATE_FILES + [PDF_FORMAT_BUILD_DIR] do |t|
-  cd(PDF_FORMAT_BUILD_DIR) { sh 'rake', "DBP_PDF_FORMAT_FILE=#{t.name}" }
+  cd(PDF_FORMAT_BUILD_DIR) { rake "DBP_PDF_FORMAT_FILE=#{t.name}" }
 end
 
 PDF_TEMPLATE_DIR = TEMPLATE_DIR / 'pdf'
@@ -73,7 +62,7 @@ file PDF_FILE => PDF_PUBLICATION_FILES
 file PDF_FILE => MANUSCRIPT_FILES
 file PDF_FILE => PUBLICATION_DATA_FILE
 file PDF_FILE => PDF_FORMAT_FILE do |t|
-  cd(PDF_BUILD_DIR) { sh 'rake', "DBP_PUBLICATION_DIR=#{PUBLICATION_DIR}", "DBP_PDF_FORMAT_FILE=#{PDF_FORMAT_FILE}", "DBP_PDF_FILE=#{t.name}" }
+  cd(PDF_BUILD_DIR) { rake "DBP_PUBLICATION_DIR=#{PUBLICATION_DIR}", "DBP_PDF_FORMAT_FILE=#{PDF_FORMAT_FILE}", "DBP_PDF_FILE=#{t.name}" }
 end
 
 task default: :all
@@ -89,6 +78,10 @@ task mobi: MOBI_FILE
 
 desc 'Build the PDF file'
 task pdf: PDF_FILE
+
+def rake(*args)
+  sh 'rake', '-r', UTILS.to_s, *args
+end
 
 CLEAN.include BOOK_BUILD_DIR
 CLOBBER.include OUT_DIR

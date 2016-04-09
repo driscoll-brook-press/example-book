@@ -16,15 +16,27 @@ BOOK_BUILD_DIR = DBP_BUILD_DIR + SLUG
 
 OUT_DIR = Pathname('uploads').expand_path
 
+def copies(from:, to:)
+  sources = FileList[from / '**/*'].exclude { |f| Pathname(f).directory? }
+  targets = sources.pathmap("%{^#{from}/,#{to}/}p")
+  targets.zip(sources).each do |target, source|
+    target_dir = target.pathmap('%d')
+    directory target_dir
+    file target => [source, target_dir] do |t|
+      cp t.source, target_dir
+    end
+  end
+  targets
+end
+
 EPUB_TEMPLATE_DIR = TEMPLATE_DIR / 'epub'
-EPUB_TEMPLATE_FILES = FileList[EPUB_TEMPLATE_DIR / '**/*']
-EPUB_COVER_IMAGE_FILE = Pathname("covers/#{SLUG}-cover-ebook.jpg").expand_path
 EPUB_BUILD_DIR = BOOK_BUILD_DIR / EPUB_TEMPLATE_DIR.basename
+EPUB_TEMPLATE_FILES = copies(from: EPUB_TEMPLATE_DIR, to: EPUB_BUILD_DIR)
+EPUB_COVER_IMAGE_FILE = Pathname("covers/#{SLUG}-cover-ebook.jpg").expand_path
 EPUB_FILE = (OUT_DIR / SLUG).ext('epub')
 
 directory EPUB_BUILD_DIR
 file EPUB_FILE => EPUB_TEMPLATE_FILES + PUBLICATION_FILES + [EPUB_BUILD_DIR, EPUB_COVER_IMAGE_FILE] do |t|
-  cp_r EPUB_TEMPLATE_DIR, BOOK_BUILD_DIR
   cd(EPUB_BUILD_DIR) { sh 'rake', "DBP_PUBLICATION_DIR=#{PUBLICATION_DIR}", "DBP_COVER_IMAGE_FILE=#{EPUB_COVER_IMAGE_FILE}", "DBP_EPUB_FILE=#{t.name}" }
 end
 
@@ -34,24 +46,22 @@ file MOBI_FILE => [EPUB_FILE] do |t|
 end
 
 PDF_FORMAT_TEMPLATE_DIR = TEMPLATE_DIR / 'pdf-format'
-PDF_FORMAT_TEMPLATE_FILES = FileList[PDF_FORMAT_TEMPLATE_DIR / '**/*']
 PDF_FORMAT_BUILD_DIR = BOOK_BUILD_DIR / PDF_FORMAT_TEMPLATE_DIR.basename
+PDF_FORMAT_TEMPLATE_FILES = copies(from: PDF_FORMAT_TEMPLATE_DIR, to: PDF_FORMAT_BUILD_DIR)
 PDF_FORMAT_FILE = (BOOK_BUILD_DIR / 'dbp.fmt').expand_path
 
 directory PDF_FORMAT_BUILD_DIR
 file PDF_FORMAT_FILE => PDF_FORMAT_TEMPLATE_FILES + [PDF_FORMAT_BUILD_DIR] do |t|
-  cp_r PDF_FORMAT_TEMPLATE_DIR, BOOK_BUILD_DIR
   cd(PDF_FORMAT_BUILD_DIR) { sh 'rake', "DBP_PDF_FORMAT_FILE=#{t.name}" }
 end
 
 PDF_TEMPLATE_DIR = TEMPLATE_DIR / 'pdf'
-PDF_TEMPLATE_FILES = FileList[PDF_TEMPLATE_DIR / '**/*']
 PDF_BUILD_DIR = BOOK_BUILD_DIR / PDF_TEMPLATE_DIR.basename
 PDF_FILE = EPUB_FILE.ext('pdf')
 
+PDF_TEMPLATE_FILES = copies(from: PDF_TEMPLATE_DIR, to: PDF_BUILD_DIR)
 directory PDF_BUILD_DIR
 file PDF_FILE => PDF_TEMPLATE_FILES + PUBLICATION_FILES + [PDF_FORMAT_FILE, PDF_BUILD_DIR] do |t|
-  cp_r PDF_TEMPLATE_DIR, BOOK_BUILD_DIR
   cd(PDF_BUILD_DIR) { sh 'rake', "DBP_PUBLICATION_DIR=#{PUBLICATION_DIR}", "DBP_PDF_FORMAT_FILE=#{PDF_FORMAT_FILE}", "DBP_PDF_FILE=#{t.name}" }
 end
 

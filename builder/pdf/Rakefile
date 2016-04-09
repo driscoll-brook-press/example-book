@@ -7,12 +7,28 @@ PUBLICATION_SOURCE_DIR = Pathname(ENV['DBP_PUBLICATION_DIR'])
 PDF_FORMAT_FILE = Pathname(ENV['DBP_PDF_FORMAT_FILE'])
 
 PUBLICATION_DATA_SOURCE_FILE = PUBLICATION_SOURCE_DIR / 'publication.yaml'
+PDF_PUBLICATION_SOURCE_DIR = PUBLICATION_SOURCE_DIR / 'pdf'
 
 PDF_FILE = Pathname(ENV['DBP_PDF_FILE'])
 OUT_DIR = PDF_FILE.dirname
 
-MANUSCRIPT_LISTING_SOURCE_FILE = PUBLICATION_SOURCE_DIR / 'manuscript.yaml'
+MANUSCRIPT_SOURCE_DIR =  PUBLICATION_SOURCE_DIR / 'manuscript'
+MANUSCRIPT_LISTING_SOURCE_FILE = MANUSCRIPT_SOURCE_DIR / 'listing.yaml'
+MANUSCRIPT_DIR = Pathname('manuscript')
 MANUSCRIPT_LISTING_FILE = Pathname('manuscript.tex')
+
+def copies(from:, to:)
+  sources = FileList[from / '**/*'].exclude { |f| Pathname(f).directory? }
+  targets = sources.pathmap("%{^#{from}/,#{to}/}p")
+  targets.zip(sources).each do |target, source|
+    target_dir = target.pathmap('%d')
+    directory target_dir
+    file target => [source, target_dir] do |t|
+      cp t.source, target_dir
+    end
+  end
+  targets
+end
 
 file MANUSCRIPT_LISTING_FILE => [MANUSCRIPT_LISTING_SOURCE_FILE] do |t|
   File.open(t.name, 'w') do |f|
@@ -21,27 +37,21 @@ file MANUSCRIPT_LISTING_FILE => [MANUSCRIPT_LISTING_SOURCE_FILE] do |t|
 end
 
 PUBLICATION_DATA_FILE = Pathname('publication.tex')
-TEX_FILES = FileList['**/*.tex']
+SOURCE_FILES = FileList['**/*.tex']
+MANUSCRIPT_FILES = copies(from: MANUSCRIPT_SOURCE_DIR, to: MANUSCRIPT_DIR)
+PDF_PUBLICATION_FILES = copies(from: PDF_PUBLICATION_SOURCE_DIR, to: '.')
 
 directory OUT_DIR
-file PDF_FILE => TEX_FILES + [PDF_FORMAT_FILE, PUBLICATION_DATA_FILE, MANUSCRIPT_LISTING_FILE, OUT_DIR] do |t|
+file PDF_FILE => SOURCE_FILES
+file PDF_FILE => MANUSCRIPT_FILES
+file PDF_FILE => MANUSCRIPT_LISTING_FILE
+file PDF_FILE => PDF_PUBLICATION_FILES
+file PDF_FILE => PUBLICATION_DATA_FILE
+file PDF_FILE => [PDF_FORMAT_FILE, OUT_DIR] do |t|
   sh 'pdftex', '-interaction=batchmode', '-fmt', PDF_FORMAT_FILE.to_s, '-jobname', t.name.pathmap('%X'), 'book'
 end
 
-MANUSCRIPT_SOURCE_DIR =  PUBLICATION_SOURCE_DIR / 'manuscript'
-MANUSCRIPT_DIR = Pathname('manuscript')
-
-FileList[MANUSCRIPT_SOURCE_DIR / '**/*.tex'].each do |f|
-  target = f.pathmap("%{^#{MANUSCRIPT_SOURCE_DIR}/,#{MANUSCRIPT_DIR}/}p")
-  dir = target.pathmap('%d')
-  directory dir
-  file target => [f, dir] do |t|
-    cp t.source, t.name
-  end
-  file PDF_FILE => target
-end
-
-file PUBLICATION_DATA_FILE => [PUBLICATION_DATA_SOURCE_FILE] do |t|
+file PUBLICATION_DATA_FILE => PUBLICATION_DATA_SOURCE_FILE do |t|
   publication = YAML.load_file(t.source)
   File.open(t.name, 'w') do |f|
     f.puts "\\title={#{publication['title']}}"

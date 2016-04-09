@@ -7,31 +7,40 @@ require 'rake/ext/string'
 PUBLICATION_SOURCE_DIR = Pathname(ENV['DBP_PUBLICATION_DIR'])
 PUBLICATION_SOURCE_FILE = PUBLICATION_SOURCE_DIR / 'publication.yaml'
 MANUSCRIPT_SOURCE_DIR = PUBLICATION_SOURCE_DIR / 'manuscript'
-MANUSCRIPT_LISTING_SOURCE_FILE = PUBLICATION_SOURCE_DIR / 'manuscript.yaml'
+MANUSCRIPT_LISTING_SOURCE_FILE = MANUSCRIPT_SOURCE_DIR / 'listing.yaml'
 
-DATA_DIR = Pathname('_data')
 FIXED_DIR = Pathname('_fixed')
 FIXED_FILES = FileList[FIXED_DIR / '**/*']
+
+DATA_DIR = Pathname('_data')
 MANUSCRIPT_LISTING_FILE = DATA_DIR / 'manuscript.yaml'
-MANUSCRIPT_DIR = Pathname('manuscript')
+PUBLICATION_DATA_FILE = DATA_DIR / 'publication.yaml'
 
 PUBLICATION = YAML.load_file(PUBLICATION_SOURCE_FILE)
 CONFIG = YAML.load_file('_config.yaml')
 
-COPIED_FILES = {
-  'cover/cover.jpg' => ENV['DBP_COVER_IMAGE_FILE'],
-  DATA_DIR / 'publication.yaml' => PUBLICATION_SOURCE_FILE,
-}
-
-COPIED_FILES.each do |target, source|
-  file target => source do |t|
-    cp t.source, t.name
-  end
+file PUBLICATION_DATA_FILE => PUBLICATION_SOURCE_FILE do |t|
+  cp t.source, t.name
 end
 
+def copies(from:, to:)
+  sources = FileList[from / '**/*'].exclude { |f| Pathname(f).directory? }
+  targets = sources.pathmap("%{^#{from}/,#{to}/}p")
+  targets.zip(sources).each do |target, source|
+    target_dir = target.pathmap('%d')
+    directory target_dir
+    file target => [source, target_dir] do |t|
+      cp t.source, target_dir
+    end
+  end
+  targets
+end
+
+MANUSCRIPT_DIR = Pathname('manuscript')
 TEX_PATH_TO_MARKDOWN_PATH = "%{^#{MANUSCRIPT_SOURCE_DIR}/,#{MANUSCRIPT_DIR}/}X.md"
 MARKDOWN_PATH_TO_TEX_PATH = "%{^#{MANUSCRIPT_DIR}/,#{MANUSCRIPT_SOURCE_DIR}/}X.tex"
 MANUSCRIPT_FILES = FileList[MANUSCRIPT_SOURCE_DIR / '**/*.tex'].pathmap(TEX_PATH_TO_MARKDOWN_PATH)
+EPUB_PUBLICATION_FILES = copies(from: PUBLICATION_SOURCE_DIR / 'epub', to: '.')
 
 BUILD_DIR = Pathname('_site')
 OPF_FILE = BUILD_DIR / 'package.opf'
@@ -45,7 +54,12 @@ end
 
 # This actually builds all of the content files,
 # not only the OPF file.
-file OPF_FILE => SOURCE_FILES + MANUSCRIPT_FILES + COPIED_FILES.keys do
+file OPF_FILE => SOURCE_FILES
+file OPF_FILE => MANUSCRIPT_FILES
+file OPF_FILE => MANUSCRIPT_LISTING_FILE
+file OPF_FILE => EPUB_PUBLICATION_FILES
+file OPF_FILE => PUBLICATION_DATA_FILE
+file OPF_FILE do
   sh 'jekyll', 'build'
 end
 
@@ -61,7 +75,7 @@ file EPUB_FILE => [OPF_FILE, OUT_DIR] + FIXED_FILES do |t|
   cd(BUILD_DIR) { sh 'zip', t.name, '-rDX9', '.' }
 end
 
-file MANUSCRIPT_LISTING_FILE => [MANUSCRIPT_LISTING_SOURCE_FILE] do |t|
+file MANUSCRIPT_LISTING_FILE => MANUSCRIPT_LISTING_SOURCE_FILE do |t|
   listing = YAML.load_file(t.source)
   File.open(t.name, 'w') do |f|
     listing.each{|line| f.puts "- manuscript/#{line}.html"}
@@ -69,10 +83,9 @@ file MANUSCRIPT_LISTING_FILE => [MANUSCRIPT_LISTING_SOURCE_FILE] do |t|
 end
 
 EPUB_CHECK_REPORT = EPUB_FILE.ext('json')
-file EPUB_CHECK_REPORT => [EPUB_FILE] do |t|
-  sh 'epubcheck', EPUB_FILE.to_s, '--json', t.name
+file EPUB_CHECK_REPORT => EPUB_FILE do |t|
+  sh 'epubcheck', t.source, '--json', t.name
 end
-
 
 rule '.md' => proc { |f| f.pathmap(MARKDOWN_PATH_TO_TEX_PATH) } do |t|
   dir = t.name.pathmap('%d')

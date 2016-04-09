@@ -3,7 +3,9 @@ require 'pathname'
 require 'yaml'
 require 'rake/ext/pathname'
 
-PUBLICATION_DIR = Pathname('publication').expand_path
+PROJECT_DIR = Pathname(ENV.fetch('DBP_PROJECT_DIR', Pathname.pwd)).expand_path
+puts "Project dir: #{PROJECT_DIR}"
+PUBLICATION_DIR = PROJECT_DIR / 'publication'
 PUBLICATION_DATA_FILE = PUBLICATION_DIR / 'publication.yaml'
 PUBLICATION = YAML.load_file(PUBLICATION_DATA_FILE)
 SLUG = PUBLICATION['slug']
@@ -11,12 +13,12 @@ SLUG = PUBLICATION['slug']
 MANUSCRIPT_DIR = PUBLICATION_DIR / 'manuscript'
 MANUSCRIPT_FILES = FileList[MANUSCRIPT_DIR / '**/*']
 
-TEMPLATE_DIR = Pathname('builder')
+TEMPLATE_DIR = Pathname(__FILE__).dirname
 
 DBP_BUILD_DIR = Pathname('/var/tmp/dbp')
 BOOK_BUILD_DIR = DBP_BUILD_DIR + SLUG
 
-OUT_DIR = Pathname('uploads').expand_path
+OUT_DIR = PROJECT_DIR / 'uploads'
 
 def copies(from:, to:)
   sources = FileList[from / '**/*'].exclude { |f| Pathname(f).directory? }

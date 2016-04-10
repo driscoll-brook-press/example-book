@@ -1,7 +1,7 @@
 require 'rake/clean'
 require 'rake/ext/pathname'
 
-PDF_FORMAT_FILE = Pathname(ENV['DBP_PDF_FORMAT_FILE'])
+PDF_FORMAT_FILE = Pathname(ENV['DBP_OUTPUT_FILE'])
 
 desc 'Build the format file'
 task default: [:format]

@@ -1,24 +1,23 @@
 def copies(from:, to:)
   sources = FileList[from / '**/*'].exclude { |f| Pathname(f).directory? }
-  targets = sources.pathmap("%{^#{from}/,#{to}/}p")
-  targets.zip(sources).each do |target, source|
-    target_dir = target.pathmap('%d')
-    directory target_dir
-    file target => [source, target_dir] do |t|
-      cp t.source, target_dir
-    end
+  map = "%{^#{from}/,#{to}/}p"
+  mapping(sources, map) do |source, target|
+    cp source, target.pathmap('%d')
+  end
+end
+
+def mapping(sources, map, &block)
+  targets = sources.pathmap(map)
+  sources.zip(targets).each do |source, target|
+    mapped_file(source, target, &block)
   end
   targets
 end
 
-def translated(sources:, map:)
-  targets = sources.pathmap(map)
-  sources.zip(targets).each do |source, target|
-    target_dir = target.pathmap('%d')
-    directory target_dir
-    file target => [source, target_dir] do |t|
-      yield source, target
-    end
+def mapped_file(source, target)
+  target_dir = target.pathmap('%d')
+  directory target_dir
+  file target => [source, target_dir] do
+    yield source, target
   end
-  targets
 end

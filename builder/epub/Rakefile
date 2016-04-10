@@ -28,8 +28,8 @@ MANUSCRIPT_SOURCE_FILES = FileList[MANUSCRIPT_SOURCE_DIR / '**/*.tex']
 TEX_PATH_TO_MARKDOWN_PATH = "%{^#{MANUSCRIPT_SOURCE_DIR}/,#{MANUSCRIPT_DIR}/}X.md"
 EPUB_PUBLICATION_FILES = copies(from: PUBLICATION_SOURCE_DIR / 'epub', to: '.')
 
-MANUSCRIPT_FILES = translated(sources: MANUSCRIPT_SOURCE_FILES, map: TEX_PATH_TO_MARKDOWN_PATH) do |source, dest|
-  sh 'tex2md', source, dest.pathmap('%d')
+MANUSCRIPT_FILES = mapping(MANUSCRIPT_SOURCE_FILES, TEX_PATH_TO_MARKDOWN_PATH) do |source, target|
+  sh 'tex2md', source, target.pathmap('%d')
 end
 
 BUILD_DIR = Pathname('_site')

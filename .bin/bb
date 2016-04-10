@@ -1,2 +1,15 @@
-#! /usr/bin/env bash
-rake -f builder/Rakefile "$@"
+#! /usr/bin/env ruby
+require 'fileutils'
+require 'pathname'
+
+books_bin_dir = Pathname(__FILE__).dirname
+books_dir = books_bin_dir.dirname
+default_builder_dir = books_dir / '.book-builder'
+book_dir = Pathname.pwd
+builder_dirs = [ book_dir / 'book-builder', book_dir / '.book-builder', default_builder_dir ]
+
+rakefile = builder_dirs.map { |d| d / 'Rakefile' }.find { |r| r.file? }
+
+rake_args = ARGV.unshift
+
+system 'rake', '-f', rakefile.to_s, *rake_args

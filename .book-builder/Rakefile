@@ -9,6 +9,7 @@ UTILS = TEMPLATE_DIR / 'utils'
 require UTILS
 
 BOOK_DIR = Pathname(ENV.fetch('DBP_BOOK_DIR', Pathname.pwd)).expand_path
+
 PUBLICATION_DIR = BOOK_DIR / 'publication'
 PUBLICATION_DATA_FILE = PUBLICATION_DIR / 'publication.yaml'
 

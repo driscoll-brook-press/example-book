@@ -24,12 +24,11 @@ file PUBLICATION_DATA_FILE => PUBLICATION_SOURCE_FILE do |t|
 end
 
 MANUSCRIPT_DIR = Pathname('manuscript')
-MANUSCRIPT_SOURCE_FILES = FileList[MANUSCRIPT_SOURCE_DIR / '**/*.tex']
-TEX_PATH_TO_MARKDOWN_PATH = "%{^#{MANUSCRIPT_SOURCE_DIR}/,#{MANUSCRIPT_DIR}/}X.md"
-EPUB_PUBLICATION_FILES = copies(from: PUBLICATION_SOURCE_DIR / 'epub', to: '.')
+MARKDOWN_PATH = "%{^#{MANUSCRIPT_SOURCE_DIR}/,#{MANUSCRIPT_DIR}/}X.md"
+EPUB_PUBLICATION_FILES = files_copied(from: PUBLICATION_SOURCE_DIR / 'epub', to: '.')
 
-MANUSCRIPT_FILES = mapping(MANUSCRIPT_SOURCE_FILES, TEX_PATH_TO_MARKDOWN_PATH) do |source, target|
-  sh 'tex2md', source, target.pathmap('%d')
+MANUSCRIPT_FILES = files_created(from_each: MANUSCRIPT_SOURCE_DIR / '**/*.tex', as: MARKDOWN_PATH) do |dep|
+  sh 'tex2md', dep[:source], dep[:dir]
 end
 
 BUILD_DIR = Pathname('_site')

@@ -24,15 +24,12 @@ file MANUSCRIPT_LISTING_FILE => [MANUSCRIPT_LISTING_SOURCE_FILE] do |t|
 end
 
 PUBLICATION_DATA_FILE = Pathname('publication.tex')
-SOURCE_FILES = FileList['**/*.tex']
-MANUSCRIPT_FILES = copies(from: MANUSCRIPT_SOURCE_DIR, to: MANUSCRIPT_DIR)
-PDF_PUBLICATION_FILES = copies(from: PDF_PUBLICATION_SOURCE_DIR, to: '.')
 
 directory OUT_DIR
-file PDF_FILE => SOURCE_FILES
-file PDF_FILE => MANUSCRIPT_FILES
+file PDF_FILE => FileList['**/*.tex']
+file PDF_FILE => files_copied(from: MANUSCRIPT_SOURCE_DIR, to: MANUSCRIPT_DIR)
 file PDF_FILE => MANUSCRIPT_LISTING_FILE
-file PDF_FILE => PDF_PUBLICATION_FILES
+file PDF_FILE => files_copied(from: PDF_PUBLICATION_SOURCE_DIR, to: '.')
 file PDF_FILE => PUBLICATION_DATA_FILE
 file PDF_FILE => [PDF_FORMAT_FILE, OUT_DIR] do |t|
   sh 'pdftex', '-interaction=batchmode', '-fmt', PDF_FORMAT_FILE.to_s, '-jobname', t.name.pathmap('%X'), 'book'

@@ -1,23 +1,25 @@
-def copies(from:, to:)
-  sources = FileList[from / '**/*'].exclude { |f| Pathname(f).directory? }
-  map = "%{^#{from}/,#{to}/}p"
-  mapping(sources, map) do |source, target|
-    cp source, target.pathmap('%d')
+def files_copied(from:, to:)
+  files_created(from_each: from / '**/*', as: "%{^#{from}/,#{to}/}p") do |dep|
+    cp dep[:source], dep[:dir]
   end
 end
 
-def mapping(sources, map, &block)
-  targets = sources.pathmap(map)
-  sources.zip(targets).each do |source, target|
-    mapped_file(source, target, &block)
-  end
-  targets
+def files_created(from_each:, as:, &block)
+  FileList[from_each]
+      .exclude { |f| Pathname(f).directory? }
+      .map { |source| mapped_dependency(source, as) }
+      .each { |dep| mapped_file_task(dep, &block) }
+      .map { |dep| dep[:target] }
 end
 
-def mapped_file(source, target)
-  target_dir = target.pathmap('%d')
-  directory target_dir
-  file target => [source, target_dir] do
-    yield source, target
+def mapped_file_task(dep)
+  directory dep[:dir]
+  file dep[:target] => [dep[:source], dep[:dir]] do
+    yield dep
   end
+end
+
+def mapped_dependency(source, map)
+  target = source.pathmap(map)
+  { source: source, target: target, dir: target.pathmap('%d') }
 end

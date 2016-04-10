@@ -30,7 +30,7 @@ def produce(medium:, deps: [], **env)
   build_dir = BOOK_BUILD_DIR / template_dir.basename
   output_file = output_file(medium)
 
-  file output_file => copies(from: template_dir, to: build_dir)
+  file output_file => files_copied(from: template_dir, to: build_dir)
   file output_file => FileList[PUBLICATION_DIR / medium / '**/*']
   file output_file => FileList[PUBLICATION_DIR / 'manuscript' / '**/*']
   file output_file => PUBLICATION_DATA_FILE
@@ -47,7 +47,7 @@ end
 
 PDF_FORMAT_TEMPLATE_DIR = TEMPLATE_DIR / 'pdf-format'
 PDF_FORMAT_BUILD_DIR = BOOK_BUILD_DIR / PDF_FORMAT_TEMPLATE_DIR.basename
-PDF_FORMAT_TEMPLATE_FILES = copies(from: PDF_FORMAT_TEMPLATE_DIR, to: PDF_FORMAT_BUILD_DIR)
+PDF_FORMAT_TEMPLATE_FILES = files_copied(from: PDF_FORMAT_TEMPLATE_DIR, to: PDF_FORMAT_BUILD_DIR)
 PDF_FORMAT_FILE = (BOOK_BUILD_DIR / 'dbp.fmt').expand_path
 
 file PDF_FORMAT_FILE => PDF_FORMAT_TEMPLATE_FILES do |t|

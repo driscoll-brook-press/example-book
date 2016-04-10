@@ -36,12 +36,13 @@ def produce(medium:, prereqs: [], **env)
   file output_file => FileList[PUBLICATION_DIR / 'manuscript' / '**/*']
   file output_file => [PUBLICATION_DATA_FILE, OUT_DIR]
 
-  desc "Build the #{medium} file"
   task output_file do |t|
     subrake dir: build_dir, create: output_file, DBP_PUBLICATION_DIR: PUBLICATION_DIR, **env
   end
 
+  desc "Build the #{medium} file"
   task medium => output_file
+
   task all: medium
 end
 
@@ -64,7 +65,7 @@ end
 
 task default: :all
 
-desc 'Build all formats'
+desc 'Build all formats (default)'
 task all: [:mobi]
 
 desc 'Build the mobi file'

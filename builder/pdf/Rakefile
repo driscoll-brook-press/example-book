@@ -10,7 +10,6 @@ PUBLICATION_DATA_SOURCE_FILE = PUBLICATION_SOURCE_DIR / 'publication.yaml'
 PDF_PUBLICATION_SOURCE_DIR = PUBLICATION_SOURCE_DIR / 'pdf'
 
 PDF_FILE = Pathname(ENV['DBP_OUTPUT_FILE'])
-OUT_DIR = PDF_FILE.dirname
 
 MANUSCRIPT_SOURCE_DIR =  PUBLICATION_SOURCE_DIR / 'manuscript'
 MANUSCRIPT_LISTING_SOURCE_FILE = MANUSCRIPT_SOURCE_DIR / 'listing.yaml'
@@ -25,13 +24,11 @@ end
 
 PUBLICATION_DATA_FILE = Pathname('publication.tex')
 
-directory OUT_DIR
 file PDF_FILE => FileList['**/*.tex']
 file PDF_FILE => files_copied(from: MANUSCRIPT_SOURCE_DIR, to: MANUSCRIPT_DIR)
-file PDF_FILE => MANUSCRIPT_LISTING_FILE
 file PDF_FILE => files_copied(from: PDF_PUBLICATION_SOURCE_DIR, to: '.')
-file PDF_FILE => PUBLICATION_DATA_FILE
-file PDF_FILE => [PDF_FORMAT_FILE, OUT_DIR] do |t|
+file PDF_FILE => [MANUSCRIPT_LISTING_FILE, PUBLICATION_DATA_FILE, PDF_FORMAT_FILE]
+file PDF_FILE do |t|
   sh 'pdftex', '-interaction=batchmode', '-fmt', PDF_FORMAT_FILE.to_s, '-jobname', t.name.pathmap('%X'), 'book'
 end
 

@@ -19,22 +19,22 @@ DBP_BUILD_DIR = Pathname('/var/tmp/dbp')
 BOOK_BUILD_DIR = DBP_BUILD_DIR + SLUG
 
 OUT_DIR = BOOK_DIR / 'uploads'
+directory OUT_DIR
 
 def output_file(medium)
   (OUT_DIR / SLUG).ext(medium.to_s)
 end
 
-def produce(medium:, deps: [], **env)
-  medium = medium.to_s
-  template_dir = TEMPLATE_DIR / medium
+def produce(medium:, prereqs: [], **env)
+  template_dir = TEMPLATE_DIR / medium.to_s
   build_dir = BOOK_BUILD_DIR / template_dir.basename
   output_file = output_file(medium)
 
+  file output_file => prereqs
   file output_file => files_copied(from: template_dir, to: build_dir)
-  file output_file => FileList[PUBLICATION_DIR / medium / '**/*']
+  file output_file => FileList[PUBLICATION_DIR / "#{medium}/**/*"]
   file output_file => FileList[PUBLICATION_DIR / 'manuscript' / '**/*']
-  file output_file => PUBLICATION_DATA_FILE
-  file output_file => deps
+  file output_file => [PUBLICATION_DATA_FILE, OUT_DIR]
 
   desc "Build the #{medium} file"
   task output_file do |t|
@@ -54,7 +54,7 @@ file PDF_FORMAT_FILE => PDF_FORMAT_TEMPLATE_FILES do |t|
   subrake dir: PDF_FORMAT_BUILD_DIR, create: t.name
 end
 
-produce(medium: :pdf, deps: PDF_FORMAT_FILE, DBP_PDF_FORMAT_FILE: PDF_FORMAT_FILE )
+produce(medium: :pdf, prereqs: PDF_FORMAT_FILE, DBP_PDF_FORMAT_FILE: PDF_FORMAT_FILE )
 produce(medium: :epub)
 
 MOBI_FILE = output_file(:mobi)

@@ -24,10 +24,13 @@ file PUBLICATION_DATA_FILE => PUBLICATION_SOURCE_FILE do |t|
 end
 
 MANUSCRIPT_DIR = Pathname('manuscript')
+MANUSCRIPT_SOURCE_FILES = FileList[MANUSCRIPT_SOURCE_DIR / '**/*.tex']
 TEX_PATH_TO_MARKDOWN_PATH = "%{^#{MANUSCRIPT_SOURCE_DIR}/,#{MANUSCRIPT_DIR}/}X.md"
-MARKDOWN_PATH_TO_TEX_PATH = "%{^#{MANUSCRIPT_DIR}/,#{MANUSCRIPT_SOURCE_DIR}/}X.tex"
-MANUSCRIPT_FILES = FileList[MANUSCRIPT_SOURCE_DIR / '**/*.tex'].pathmap(TEX_PATH_TO_MARKDOWN_PATH)
 EPUB_PUBLICATION_FILES = copies(from: PUBLICATION_SOURCE_DIR / 'epub', to: '.')
+
+MANUSCRIPT_FILES = translated(sources: MANUSCRIPT_SOURCE_FILES, map: TEX_PATH_TO_MARKDOWN_PATH) do |source, dest|
+  sh 'tex2md', source, dest.pathmap('%d')
+end
 
 BUILD_DIR = Pathname('_site')
 OPF_FILE = BUILD_DIR / 'package.opf'
@@ -72,12 +75,6 @@ end
 EPUB_CHECK_REPORT = EPUB_FILE.ext('json')
 file EPUB_CHECK_REPORT => EPUB_FILE do |t|
   sh 'epubcheck', t.source, '--json', t.name
-end
-
-rule '.md' => proc { |f| f.pathmap(MARKDOWN_PATH_TO_TEX_PATH) } do |t|
-  dir = t.name.pathmap('%d')
-  mkpath dir
-  sh 'tex2md', t.source, dir
 end
 
 task default: [:all]

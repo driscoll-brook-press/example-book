@@ -10,3 +10,15 @@ def copies(from:, to:)
   end
   targets
 end
+
+def translated(sources:, map:)
+  targets = sources.pathmap(map)
+  sources.zip(targets).each do |source, target|
+    target_dir = target.pathmap('%d')
+    directory target_dir
+    file target => [source, target_dir] do |t|
+      yield source, target
+    end
+  end
+  targets
+end

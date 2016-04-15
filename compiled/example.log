@@ -1,0 +1,46 @@
+This is pdfTeX, Version 3.14159265-2.6-1.40.16 (TeX Live 2015) (preloaded format=/var/tmp/dbp/example/dbp 2016.4.15)  15 APR 2016 12:05
+entering extended mode
+ restricted \write18 enabled.
+ %&-line parsing enabled.
+ encTeX v. Jun. 2004, reencoding enabled
+**book
+(./book.tex (./publication.tex) (./format.tex (./format/debugging.tex) (./forma
+t/fonts.tex) (./format/text.tex \textsize:11.0pt \leading:14.0pt \aheadsize:36.
+0pt \bheadsize:24.0pt \cheadsize:18.0pt \smalltextsize:10.0pt \captionsize:8.0p
+t \maxtextcharheightratio:.732 \maxtextchardepthratio:.299 \topskip:8.05194pt \
+splittopskip:8.05194pt \maxdepth:3.28896pt \splitmaxdepth:3.28896pt \headskip:2
+8.0pt \footskip:28.0pt) (./format/layout.tex \pdfpagewidth:361.34999pt \pdfpage
+height:578.15999pt \hsize:264.0pt \textlines:27 \textheight:372.05194pt \vsize:
+372.05194pt \topmarginratio:.5 \voffset:103.05402pt \spinemarginratio:.5 \spine
+offset:12.0pt \spinemargin:54.67499pt \edgemargin:42.675pt \sinkratio:.33333333
+\sinkheight:134.05194pt) (./format/hyphenation.tex)) (./frontmatter.tex (./fron
+tmatter/before.tex (./frontmatter/teaser.tex) (./frontmatter/author.tex (./auth
+or/books.tex))) [1.1{/Users/Dale/Library/texlive/2015/texmf-var/fonts/map/pdfte
+x/updmap/pdftex.map}] [2.2] [3.3] [4.4] (./frontmatter/after.tex)) [5.5] [6.6] 
+(./manuscript.tex (./manuscript/chapter-01.tex) (./manuscript/chapter-02.tex [7
+.1.0.2])) [8.2.0.2] (./backmatter.tex (./backmatter/before.tex) (./backmatter/a
+uthor.tex (./author/about.tex) (./author/connect.tex [9.9.0.2] [10.10.0.2]) (./
+author/also.tex [11.11.0.2] [12.12.0.2] (./author/books.tex))) (./backmatter/pu
+blisher.tex (./backmatter/preview.tex) [13.13.0.2] [14.14.0.2] [15.15.0.2] [16.
+16.0.2] (./backmatter/tailors-tears.tex [17.17.0.2] [18.18.0.2] [19.19.0.2]) [2
+0.20.0.2] [21.21.0.2] [22.22.0.2]) (./backmatter/after.tex)) [23.23.0.2] [24.24
+.0.2] ){/usr/local/texlive/texmf-local/fonts/enc/dvips/GaramondPremierPro/a_sk2
+e5u.enc}{/usr/local/texlive/texmf-local/fonts/enc/dvips/GaramondPremierPro/a_yk
+rozx.enc}{/usr/local/texlive/texmf-local/fonts/enc/dvips/GaramondPremierPro/a_a
+xjuhb.enc}{/usr/local/texlive/texmf-local/fonts/enc/dvips/ProximaNova/a_l2lai3.
+enc}</usr/local/texlive/texmf-local/fonts/type1/lcdftools/GaramondPremierPro/Ga
+ramondPremrPro-Capt.pfb></usr/local/texlive/texmf-local/fonts/type1/lcdftools/G
+aramondPremierPro/GaramondPremrPro-Disp.pfb></usr/local/texlive/texmf-local/fon
+ts/type1/lcdftools/GaramondPremierPro/GaramondPremrPro-It.pfb></usr/local/texli
+ve/texmf-local/fonts/type1/lcdftools/GaramondPremierPro/GaramondPremrPro-Subh.p
+fb></usr/local/texlive/texmf-local/fonts/type1/lcdftools/GaramondPremierPro/Gar
+amondPremrPro.pfb></usr/local/texlive/texmf-local/fonts/type1/lcdftools/Proxima
+Nova/ProximaNova-Regular.pfb>
+Output written on /Users/Dale/programming/dbp/example-book/compiled/example.pdf
+ (24 pages, 417545 bytes).
+PDF statistics:
+ 113 PDF objects out of 1000 (max. 8388607)
+ 80 compressed objects within 1 object stream
+ 0 named destinations out of 1000 (max. 500000)
+ 20481 words of extra memory for PDF output out of 20736 (max. 10000000)
+
